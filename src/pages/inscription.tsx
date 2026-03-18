@@ -29,8 +29,8 @@ const Inscription: React.FC = () => {
     setError("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     const { nom, prenom, email, password, confirmPassword, profil } = formData;
 
@@ -70,12 +70,10 @@ const Inscription: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
-      
       <div className="w-[95%] max-w-[1100px] min-h-[680px] rounded-2xl overflow-hidden shadow-2xl flex">
-        
+
         {/* GAUCHE */}
         <div className="w-1/2 bg-white flex items-center justify-center">
-          
           <div className="w-[320px]">
 
             {/* LOGO */}
@@ -95,8 +93,7 @@ const Inscription: React.FC = () => {
               Créer votre compte
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-2">
-
+            <form className="space-y-2">
               <ChampSaisie
                 label="Nom"
                 type="text"
@@ -130,7 +127,6 @@ const Inscription: React.FC = () => {
                   value={formData.password}
                   onChange={handleChange}
                 />
-
                 <span
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-9 cursor-pointer text-gray-400 hover:text-gray-600"
@@ -148,7 +144,6 @@ const Inscription: React.FC = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />
-
                 <span
                   onClick={() => setShowConfirm(!showConfirm)}
                   className="absolute right-3 top-9 cursor-pointer text-gray-400 hover:text-gray-600"
@@ -173,13 +168,13 @@ const Inscription: React.FC = () => {
                 <p className="text-red-500 text-xs mt-2">{error}</p>
               )}
 
-              {/* BUTTON */}
-              <button
-                type="submit"
-                className="w-full mt-6 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition"
+              {/* BOUTON S'INSCRIRE → div cliquable */}
+              <div
+                onClick={handleSubmit}
+                className="w-full mt-6 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition text-center cursor-pointer"
               >
                 S’inscrire
-              </button>
+              </div>
             </form>
           </div>
         </div>
