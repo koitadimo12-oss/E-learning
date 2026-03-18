@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import ChampSaisie from "../composants/ChampSaisie";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
+
 const Connexion: React.FC = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     remember: false,
   });
-
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -16,9 +16,7 @@ const Connexion: React.FC = () => {
   const [profil, setProfil] = useState("Etudiant");
   const [resetError, setResetError] = useState("");
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = e.target;
 
     if (target instanceof HTMLInputElement) {
@@ -27,62 +25,21 @@ const Connexion: React.FC = () => {
       if (name === "resetEmail") {
         setResetEmail(value);
       } else {
-        const updatedForm = {
+        setFormData({
           ...formData,
           [name]: type === "checkbox" ? checked : value,
-        };
-        setFormData(updatedForm);
-
-        if (name === "password") {
-          const password = value;
-
-          const lettre = /[a-zA-Z]/.test(password);
-          const chiffre = /[0-9]/.test(password);
-          const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-          if (
-            password.length >= 10 &&
-            password.length <= 15 &&
-            lettre &&
-            chiffre &&
-            special
-          ) {
-            setError("");
-          }
-        }
+        });
       }
     } else if (target instanceof HTMLSelectElement) {
-      const value = target.value;
-      setProfil(value);
-
-      if (value === "Etudiant") {
-        setResetError("");
-      } else {
-        setResetError(
-          "Seuls les étudiants peuvent réinitialiser leur mot de passe."
-        );
-      }
+      setProfil(target.value);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const password = formData.password;
-
-    if (password.length < 10 || password.length > 15) {
-      setError("Le mot de passe doit contenir entre 10 et 15 caractères.");
-      return;
-    }
-
-    const lettre = /[a-zA-Z]/.test(password);
-    const chiffre = /[0-9]/.test(password);
-    const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (!lettre || !chiffre || !special) {
-      setError(
-        "Le mot de passe doit contenir lettre, chiffre et caractère spécial."
-      );
+    if (!formData.email || !formData.password) {
+      setError("Veuillez remplir tous les champs.");
       return;
     }
 
@@ -91,37 +48,28 @@ const Connexion: React.FC = () => {
   };
 
   const handleReset = () => {
-    if (profil === "Etudiant") {
-      setResetError("");
-      alert(`Réinitialisation pour ${resetEmail} réussie`);
-      setShowModal(false);
-      setResetEmail("");
-      setProfil("Etudiant");
-    } else {
-      setResetError(
-        "Seuls les étudiants peuvent réinitialiser leur mot de passe."
-      );
+    if (profil !== "Etudiant") {
+      setResetError("Seuls les étudiants peuvent réinitialiser leur mot de passe.");
+      return;
     }
+
+    setResetError("");
+    alert(`Réinitialisation pour ${resetEmail} réussie`);
+    setShowModal(false);
+    setResetEmail("");
+    setProfil("Etudiant");
   };
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-[#0a1b3a]">
-
       <div className="w-[95%] max-w-[1200px] min-h-[700px] flex rounded-2xl overflow-hidden shadow-2xl">
 
-        {/* GAUCHE */}
+        {/* GAUCHE FORMULAIRE */}
         <div className="w-1/2 flex items-center justify-center bg-white p-10">
           <div className="w-[420px]">
-
-            {/* LOGO CORRIGÉ */}
             <div className="mb-4 flex justify-center">
-              <img
-                src="/images/logo2.png"
-                alt="Logo"
-                className="h-12 object-contain"
-              />
+              <img src="/images/logo2.png" alt="Logo" className="h-12 object-contain" />
             </div>
-
             <p className="text-sm text-gray-500">Bienvenue !!!</p>
             <h1 className="text-3xl font-bold mb-6">Connexion</h1>
 
@@ -144,16 +92,15 @@ const Connexion: React.FC = () => {
                   placeholder="********"
                   onChange={handleChange}
                 />
-
                 <span
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-9 cursor-pointer text-gray-400 hover:text-gray-600 text-xl"
                 >
                   {showPassword ? <FiEyeOff /> : <FiEye />}
                 </span>
-
-                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
               </div>
+
+              {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
 
               <div className="flex justify-between items-center text-sm mt-3">
                 <label className="flex items-center gap-2">
@@ -181,17 +128,24 @@ const Connexion: React.FC = () => {
               >
                 Se connecter
               </button>
+            <div className="flex justify-center items-center text-sm text-gray-500 mt-4 gap-2">
+  <span>Pas encore de compte ?</span>
+  <button
+    type="button"
+    onClick={() => setShowModal(true)}
+    className="text-orange-500 font-semibold hover:underline"
+  >
+    S’inscrire
+  </button>
+</div>
+              
             </form>
           </div>
         </div>
 
-        {/* DROITE IMAGE CORRIGÉE */}
+        {/* DROITE IMAGE */}
         <div className="w-1/2 bg-[#f5e6db] flex items-center justify-center">
-          <img
-            src="/images/Hero.png"
-            alt="illustration"
-            className="w-full h-full object-contain"
-          />
+          <img src="/images/Hero.png" alt="illustration" className="w-full h-full object-cover" />
         </div>
       </div>
 
@@ -222,14 +176,10 @@ const Connexion: React.FC = () => {
               onChange={handleChange}
             />
 
-            {resetError && (
-              <p className="text-red-500 text-xs mt-2">{resetError}</p>
-            )}
+            {resetError && <p className="text-red-500 text-xs mt-2">{resetError}</p>}
 
             <div className="flex justify-end mt-4 gap-2">
-              <button onClick={() => setShowModal(false)}>
-                Annuler
-              </button>
+              <button onClick={() => setShowModal(false)}>Annuler</button>
               <button
                 onClick={handleReset}
                 className="px-4 py-2 bg-blue-500 text-white rounded"
