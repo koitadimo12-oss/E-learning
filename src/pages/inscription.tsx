@@ -26,7 +26,6 @@ const Inscription: React.FC = () => {
       [name]: value,
     });
 
-    // ✅ enlève erreur dès que l'utilisateur modifie
     setError("");
   };
 
@@ -35,13 +34,11 @@ const Inscription: React.FC = () => {
 
     const { nom, prenom, email, password, confirmPassword, profil } = formData;
 
-    // ✅ Vérifie champs vides
     if (!nom || !prenom || !email || !password || !confirmPassword) {
       setError("Veuillez remplir tous les champs");
       return;
     }
 
-    // ✅ Vérifie mot de passe
     if (password !== confirmPassword) {
       setError("Les mots de passe ne correspondent pas");
       return;
@@ -62,13 +59,11 @@ const Inscription: React.FC = () => {
       return;
     }
 
-    // ✅ Vérifie le profil
     if (profil !== "Etudiant") {
       setError("Seuls les étudiants sont autorisés");
       return;
     }
 
-    // ✅ SUCCESS → supprimer erreur
     setError("");
     alert("Compte étudiant créé !");
   };
@@ -79,13 +74,17 @@ const Inscription: React.FC = () => {
       <div className="w-[95%] max-w-[1100px] min-h-[680px] rounded-2xl overflow-hidden shadow-2xl flex">
         
         {/* GAUCHE */}
-        <div className="w-1/2 bg-white flex items-center justify-center transition-all duration-300 hover:shadow-inner">
+        <div className="w-1/2 bg-white flex items-center justify-center">
           
           <div className="w-[320px]">
 
             {/* LOGO */}
             <div className="flex justify-center mb-4">
-              <img src="/logo2.png" alt="logo" className="h-10 drop-shadow-md" />
+              <img
+                src="/images/logo2.png"
+                alt="logo"
+                className="h-10 drop-shadow-md"
+              />
             </div>
 
             <h2 className="text-xl font-bold text-center mb-1">
@@ -98,38 +97,32 @@ const Inscription: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-2">
 
-              <div className="hover:scale-[1.01] transition">
-                <ChampSaisie
-                  label="Nom"
-                  type="text"
-                  name="nom"
-                  value={formData.nom}
-                  onChange={handleChange}
-                />
-              </div>
+              <ChampSaisie
+                label="Nom"
+                type="text"
+                name="nom"
+                value={formData.nom}
+                onChange={handleChange}
+              />
 
-              <div className="hover:scale-[1.01] transition">
-                <ChampSaisie
-                  label="Prénom"
-                  type="text"
-                  name="prenom"
-                  value={formData.prenom}
-                  onChange={handleChange}
-                />
-              </div>
+              <ChampSaisie
+                label="Prénom"
+                type="text"
+                name="prenom"
+                value={formData.prenom}
+                onChange={handleChange}
+              />
 
-              <div className="hover:scale-[1.01] transition">
-                <ChampSaisie
-                  label="Email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
+              <ChampSaisie
+                label="Email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+              />
 
               {/* PASSWORD */}
-              <div className="relative hover:scale-[1.01] transition">
+              <div className="relative">
                 <ChampSaisie
                   label="Mot de passe"
                   type={showPassword ? "text" : "password"}
@@ -147,7 +140,7 @@ const Inscription: React.FC = () => {
               </div>
 
               {/* CONFIRM PASSWORD */}
-              <div className="relative hover:scale-[1.01] transition">
+              <div className="relative">
                 <ChampSaisie
                   label="Confirmer mot de passe"
                   type={showConfirm ? "text" : "password"}
@@ -169,7 +162,7 @@ const Inscription: React.FC = () => {
                 name="profil"
                 value={formData.profil}
                 onChange={handleChange}
-                className="w-full p-2 mt-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 hover:shadow-sm transition"
+                className="w-full p-2 mt-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
               >
                 <option value="Etudiant">Étudiant</option>
                 <option value="Personnel">Personnel</option>
@@ -183,7 +176,7 @@ const Inscription: React.FC = () => {
               {/* BUTTON */}
               <button
                 type="submit"
-                className="w-full mt-6 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 hover:scale-105 transition"
+                className="w-full mt-6 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition"
               >
                 S’inscrire
               </button>
@@ -192,9 +185,9 @@ const Inscription: React.FC = () => {
         </div>
 
         {/* DROITE */}
-        <div className="w-1/2 bg-[#f5e6db] flex items-center justify-center p-4">
+        <div className="w-1/2 bg-[#f5e6db] flex items-center justify-center">
           <img
-            src="/Hero.png"
+            src="/images/Hero.png"
             alt="illustration"
             className="w-full h-full object-contain"
           />
