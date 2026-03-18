@@ -40,7 +40,9 @@ export default function PageCours() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
           {/* Image principale */}
-          <img src={cours.image} alt={cours.titre} className="w-full h-60 object-cover" />
+          <div className="w-full h-60 flex items-center justify-center bg-gray-50 border-b border-gray-100">
+            <img src={cours.image} alt={cours.titre} className="h-36 w-36 object-contain" />
+          </div>
 
           <div className="p-6">
             <span className="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-semibold">

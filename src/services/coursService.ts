@@ -39,7 +39,7 @@ export const listeCours: Cours[] = [
     titre: "Introduction à React",
     description: "Apprenez les bases de React avec des exemples pratiques et concrets.",
     categorie: "Développement Web",
-    image: "https://placehold.co/400x200/61DAFB/000000?text=React",
+    image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg",
     images: [
       "https://placehold.co/600x340/61DAFB/000000?text=Introduction+React",
       "https://placehold.co/600x340/20232A/61DAFB?text=Composants+%26+Props",
@@ -101,7 +101,7 @@ export const listeCours: Cours[] = [
     titre: "TypeScript pour débutants",
     description: "Maîtrisez TypeScript et améliorez la qualité de votre code JavaScript.",
     categorie: "Programmation",
-    image: "https://placehold.co/400x200/3178C6/ffffff?text=TypeScript",
+    image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg",
     images: [
       "https://placehold.co/600x340/3178C6/ffffff?text=Introduction+TypeScript",
       "https://placehold.co/600x340/235A97/ffffff?text=Types+%26+Interfaces",
@@ -163,7 +163,7 @@ export const listeCours: Cours[] = [
     titre: "Tailwind CSS",
     description: "Créez des interfaces modernes et responsives rapidement avec Tailwind.",
     categorie: "Design",
-    image: "https://placehold.co/400x200/06B6D4/ffffff?text=Tailwind+CSS",
+    image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg",
     images: [
       "https://placehold.co/600x340/06B6D4/ffffff?text=Introduction+Tailwind",
       "https://placehold.co/600x340/0891B2/ffffff?text=Utility+Classes",
@@ -225,7 +225,7 @@ export const listeCours: Cours[] = [
     titre: "Node.js & Express",
     description: "Construisez des APIs REST robustes avec Node.js et Express.",
     categorie: "Backend",
-    image: "https://placehold.co/400x200/339933/ffffff?text=Node.js",
+    image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg",
     images: [
       "https://placehold.co/600x340/339933/ffffff?text=Introduction+Node.js",
       "https://placehold.co/600x340/2d7a2d/ffffff?text=Express+%26+Routing",
@@ -287,7 +287,7 @@ export const listeCours: Cours[] = [
     titre: "Python pour la Data Science",
     description: "Analysez et visualisez des données avec Python, Pandas et Matplotlib.",
     categorie: "Data Science",
-    image: "https://placehold.co/400x200/3776AB/ffffff?text=Python+DS",
+    image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
     images: [
       "https://placehold.co/600x340/3776AB/ffffff?text=Python+Data+Science",
       "https://placehold.co/600x340/2b5f8a/ffffff?text=Pandas+%26+NumPy",
@@ -349,7 +349,7 @@ export const listeCours: Cours[] = [
     titre: "Git & GitHub - Collaboration",
     description: "Maîtrisez le versioning et la collaboration en équipe avec Git et GitHub.",
     categorie: "Outils Dev",
-    image: "https://placehold.co/400x200/F05032/ffffff?text=Git+%26+GitHub",
+    image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg",
     images: [
       "https://placehold.co/600x340/F05032/ffffff?text=Introduction+Git",
       "https://placehold.co/600x340/c73e1d/ffffff?text=Branches+%26+Merge",

@@ -22,11 +22,13 @@ export default function CarteCours({ cours, onClick }: Props) {
       onClick={() => onClick(cours.id)}
     >
       <div className="relative overflow-hidden">
-        <img
-          src={cours.image}
-          alt={cours.titre}
-          className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        <div className="w-full h-44 flex items-center justify-center bg-gray-50 group-hover:bg-gray-100 transition-colors duration-300">
+          <img
+            src={cours.image}
+            alt={cours.titre}
+            className="h-24 w-24 object-contain group-hover:scale-110 transition-transform duration-300"
+          />
+        </div>
         <span className={`absolute top-3 left-3 text-xs px-2.5 py-1 rounded-full font-semibold ${badgeColor}`}>
           {cours.categorie}
         </span>
