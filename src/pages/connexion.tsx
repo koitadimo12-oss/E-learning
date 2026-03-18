@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ChampSaisie from "../composants/ChampSaisie";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { Link } from "react-router-dom"; // pour la navigation vers inscription
+import { Link } from "react-router-dom";
 
 const Connexion: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -16,10 +16,13 @@ const Connexion: React.FC = () => {
   const [profil, setProfil] = useState("Etudiant");
   const [resetError, setResetError] = useState("");
 
+  // 🔹 Gestion des changements dans les inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = e.target;
+
     if (target instanceof HTMLInputElement) {
       const { name, value, type, checked } = target;
+
       if (name === "resetEmail") {
         setResetEmail(value);
       } else {
@@ -27,22 +30,57 @@ const Connexion: React.FC = () => {
           ...formData,
           [name]: type === "checkbox" ? checked : value,
         });
+
+        // 🔹 Validation mot de passe en direct
+        if (name === "password") {
+          const password = value;
+          const lettre = /[a-zA-Z]/.test(password);
+          const chiffre = /[0-9]/.test(password);
+          const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+          if (password.length < 10 || password.length > 15) {
+            setError("Le mot de passe doit contenir entre 10 et 15 caractères.");
+          } else if (!lettre || !chiffre || !special) {
+            setError("Le mot de passe doit contenir lettres, chiffres et caractères spéciaux.");
+          } else {
+            setError(""); // mot de passe valide
+          }
+        }
       }
     } else if (target instanceof HTMLSelectElement) {
       setProfil(target.value);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // 🔹 Soumission du formulaire
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
     if (!formData.email || !formData.password) {
       setError("Veuillez remplir tous les champs.");
       return;
     }
+
+    const password = formData.password;
+    const lettre = /[a-zA-Z]/.test(password);
+    const chiffre = /[0-9]/.test(password);
+    const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < 10 || password.length > 15) {
+      setError("Le mot de passe doit contenir entre 10 et 15 caractères.");
+      return;
+    }
+
+    if (!lettre || !chiffre || !special) {
+      setError("Le mot de passe doit contenir lettres, chiffres et caractères spéciaux.");
+      return;
+    }
+
     setError("");
     alert("Connexion réussie !");
   };
 
+  // 🔹 Réinitialisation du mot de passe
   const handleReset = () => {
     if (profil !== "Etudiant") {
       setResetError("Seuls les étudiants peuvent réinitialiser leur mot de passe.");
@@ -111,22 +149,21 @@ const Connexion: React.FC = () => {
                   Se souvenir de moi
                 </label>
 
-                <button
-                  type="button"
+                <span
                   onClick={() => setShowModal(true)}
-                  className="text-blue-500 hover:underline"
+                  className="text-blue-500 hover:underline cursor-pointer"
                 >
                   Mot de passe oublié ?
-                </button>
+                </span>
               </div>
 
               {/* Bouton Se connecter */}
-              <button
-                type="submit"
-                className="w-full mt-5 py-3 rounded-full bg-orange-500 text-white font-bold hover:bg-orange-600 transition"
+              <div
+                onClick={handleSubmit}
+                className="w-full mt-5 py-3 rounded-full bg-orange-500 text-white font-bold hover:bg-orange-600 transition text-center cursor-pointer"
               >
                 Se connecter
-              </button>
+              </div>
 
               {/* Pas encore de compte ? S’inscrire */}
               <div className="flex justify-center items-center text-sm text-gray-500 mt-4 gap-2">
