@@ -1,6 +1,6 @@
 
-import Inscription from "./pages/Inscription";
+import Connexion from "./pages/Connexion";
 function App() {
-  return <Inscription/>;
+  return <Connexion/>;
 }
 export default App;
