@@ -1,166 +1,159 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
 import CarteCours from "../composants/CarteCours";
 import CarteTemoignage from "../composants/CarteTemoignages";
 
 export default function Accueil() {
-  // Animation chiffres
+  // États pour les statistiques
   const [coursCount, setCoursCount] = useState(0);
   const [etudiantsCount, setEtudiantsCount] = useState(0);
   const [profCount, setProfCount] = useState(0);
   const [catCount, setCatCount] = useState(0);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const [statsVisible, setStatsVisible] = useState(false);
 
+  // Observer scroll
   useEffect(() => {
-    const increment = (setter: Function, target: number, speed = 20) => {
-      let current = 0;
-      const step = Math.ceil(target / speed);
-      const interval = setInterval(() => {
-        current += step;
-        if (current >= target) {
-          setter(target);
-          clearInterval(interval);
-        } else {
-          setter(current);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setStatsVisible(true);
+          observer.disconnect();
         }
-      }, 50);
-    };
+      },
+      { threshold: 0.5 }
+    );
 
-    increment(setCoursCount, 500);
-    increment(setEtudiantsCount, 2000);
-    increment(setProfCount, 50);
-    increment(setCatCount, 10);
+    if (statsRef.current) observer.observe(statsRef.current);
   }, []);
 
+  // Animation chiffres
+  useEffect(() => {
+    if (!statsVisible) return;
+
+    const animateCount = (setter: Function, target: number, duration = 1500) => {
+      let start = 0;
+      const step = () => {
+        start += target / (duration / 16);
+        if (start >= target) setter(target);
+        else {
+          setter(Math.floor(start));
+          requestAnimationFrame(step);
+        }
+      };
+      requestAnimationFrame(step);
+    };
+
+    animateCount(setCoursCount, 500);
+    animateCount(setEtudiantsCount, 2000);
+    animateCount(setProfCount, 50);
+    animateCount(setCatCount, 10);
+  }, [statsVisible]);
+
   return (
-    <div className="bg-gray-100">
+    <div className="bg-gray-100 min-h-screen">
 
       <BarreNavigation />
 
       {/* HERO */}
-      <section className="bg-blue-600 text-white py-20 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-10 grid md:grid-cols-2 items-center gap-6">
-
-          <div className="animate-fadeIn">
+      <section className="bg-blue-600 text-white py-20">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center gap-10">
+          
+          <div className="md:w-1/2 text-center md:text-left">
             <h1 className="text-5xl font-bold mb-6">
               Apprenez en ligne facilement
             </h1>
-
             <p className="mb-6 text-lg">
-              Des centaines de cours pour améliorer vos compétences en technologie, mathématiques et sciences.
+              Des centaines de cours pour améliorer vos compétences.
             </p>
-
-            <button className="bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors">
+            <button className="bg-orange-500 hover:bg-orange-600 px-6 py-3 rounded-lg font-semibold text-white">
               Voir les cours
             </button>
           </div>
 
-          <img src="/hero.png" className="animate-slideIn" />
-
+          <div className="md:w-1/2">
+            <img src="/public/Hero.png" className="w-full rounded-xl" />
+          </div>
         </div>
       </section>
 
       {/* STATISTIQUES */}
-      <section className="py-16 bg-white text-center">
+      <section ref={statsRef} className="py-16 bg-white text-center">
         <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-8">
-          <div className="animate-fadeUp">
+          <div>
             <h2 className="text-3xl font-bold text-blue-600">{coursCount}+</h2>
             <p>Cours disponibles</p>
           </div>
-          <div className="animate-fadeUp delay-100">
+          <div>
             <h2 className="text-3xl font-bold text-blue-600">{etudiantsCount}+</h2>
             <p>Étudiants inscrits</p>
           </div>
-          <div className="animate-fadeUp delay-200">
+          <div>
             <h2 className="text-3xl font-bold text-blue-600">{profCount}+</h2>
             <p>Professeurs</p>
           </div>
-          <div className="animate-fadeUp delay-300">
+          <div>
             <h2 className="text-3xl font-bold text-blue-600">{catCount}+</h2>
             <p>Catégories</p>
           </div>
         </div>
       </section>
 
-      {/* COURS POPULAIRES */}
-      <section className="max-w-6xl mx-auto px-10 py-16">
-        <h2 className="text-3xl font-bold text-center mb-10 animate-fadeIn">
-          Cours populaires
-        </h2>
+      {/* COURS */}
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16">
+        <h2 className="text-3xl font-bold text-center mb-10">Cours populaires</h2>
+
         <div className="grid md:grid-cols-4 gap-6">
-          <CarteCours
-            image="/cours/react.png"
-            titre="React pour débutants"
-            auteur="Professeur Ali"
-            duree="10 heures"
-          />
-          <CarteCours
-            image="/cours/python.png"
-            titre="Python complet"
-            auteur="Professeur Sara"
-            duree="12 heures"
-          />
-          <CarteCours
-            image="/cours/math.png"
-            titre="Mathématiques"
-            auteur="Professeur Diallo"
-            duree="8 heures"
-          />
-          <CarteCours
-            image="/cours/science.png"
-            titre="Sciences"
-            auteur="Professeur Fatou"
-            duree="9 heures"
-          />
+          <CarteCours image="/cours/react.png" titre="React" auteur="Ali" duree="10h" />
+          <CarteCours image="/cours/python.png" titre="Python" auteur="Sara" duree="12h" />
+          <CarteCours image="/cours/math.png" titre="Maths" auteur="Diallo" duree="8h" />
+          <CarteCours image="/cours/science.png" titre="Science" auteur="Fatou" duree="9h" />
         </div>
       </section>
 
       {/* POURQUOI NOUS */}
       <section className="bg-gray-200 py-16 text-center">
-        <h2 className="text-3xl font-bold mb-10 animate-fadeIn">
+        <h2 className="text-3xl font-bold mb-10">
           Pourquoi choisir Kaay Niou Diang ?
         </h2>
-        <div className="grid md:grid-cols-4 max-w-6xl mx-auto gap-8">
-          <div className="animate-fadeUp">
+
+        <div className="grid md:grid-cols-3 max-w-6xl mx-auto gap-8 px-4">
+
+          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+            <img src="/images/qualite.png" className="w-32 mx-auto mb-4" />
             <h3 className="font-bold text-lg">Cours de qualité</h3>
-            <p>Des contenus créés par des experts avec des supports complets.</p>
+            <p>Des contenus créés par des experts.</p>
           </div>
-          <div className="animate-fadeUp delay-100">
+
+          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+            <img src="/images/apprentissage.png" className="w-32 mx-auto mb-4" />
             <h3 className="font-bold text-lg">Apprentissage flexible</h3>
-            <p>Apprenez à votre rythme, où que vous soyez.</p>
+            <p>Apprenez à votre rythme.</p>
           </div>
-          <div className="animate-fadeUp delay-200">
-            <h3 className="font-bold text-lg">Certificat reconnu</h3>
-            <p>Recevez un certificat officiel après chaque cours.</p>
+
+          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+            <img src="/images/certificat.png" className="w-32 mx-auto mb-4" />
+            <h3 className="font-bold text-lg">Certificat</h3>
+            <p>Obtenez un certificat après chaque cours.</p>
           </div>
-          <div className="animate-fadeUp delay-300">
-            <h3 className="font-bold text-lg">Support étudiant</h3>
-            <p>Bénéficiez d’un suivi et d’une assistance personnalisée.</p>
-          </div>
+
         </div>
       </section>
 
       {/* TEMOIGNAGES */}
       <section className="py-16">
-        <h2 className="text-3xl font-bold text-center mb-10 animate-fadeIn">
+        <h2 className="text-3xl font-bold text-center mb-10">
           Témoignages étudiants
         </h2>
+
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-          <CarteTemoignage
-            image="/temoignages/etudiant1.png"
-            nom="Amadou"
-            texte="Cette plateforme m'a beaucoup aidé à apprendre React."
-          />
-          <CarteTemoignage
-            image="/temoignages/etudiant2.png"
-            nom="Fatou"
-            texte="Les cours sont très clairs et faciles à suivre."
-          />
+          <CarteTemoignage image="/images/etudiant1.png" nom="Amadou" texte="Très utile !" />
+          <CarteTemoignage image="/images/etudiant2.png" nom="Fatou" texte="Super plateforme !" />
         </div>
       </section>
 
       <PiedPage />
-
     </div>
   );
 }

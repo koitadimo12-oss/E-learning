@@ -2,19 +2,18 @@ export default function BarreNavigation() {
   return (
     <nav className="flex justify-between items-center px-10 py-4 bg-white shadow">
 
+      {/* LOGO */}
       <div className="flex items-center gap-3">
-
         <img 
-        src="/logo2.png" 
-        className="w-14 h-14 object-contain"
+          src="/logo2.png" 
+          className="w-20"
         />
-
         <h1 className="font-bold text-2xl text-blue-600">
           Kaay Niou Diang
         </h1>
-
       </div>
 
+      {/* MENU */}
       <ul className="flex gap-8 font-medium items-center">
 
         <li className="hover:text-blue-600 cursor-pointer">
@@ -36,5 +35,5 @@ export default function BarreNavigation() {
       </ul>
 
     </nav>
-  )
+  );
 }
