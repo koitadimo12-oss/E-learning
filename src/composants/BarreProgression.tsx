@@ -3,13 +3,25 @@ interface Props {
 }
 
 export default function BarreProgression({ progression }: Props) {
+  const couleur =
+    progression >= 80
+      ? "bg-green-400"
+      : progression >= 40
+      ? "bg-orange-400"
+      : "bg-blue-400";
+
   return (
-    <div className="w-full bg-gray-200 rounded-full h-2">
-      <div
-        className="bg-orange-400 h-2 rounded-full transition-all"
-        style={{ width: `${progression}%` }}
-      />
-      <p className="text-xs text-blue-600 mt-1 font-medium">{progression}% complété</p>
+    <div>
+      <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <span>Progression</span>
+        <span className="font-semibold text-blue-700">{progression}%</span>
+      </div>
+      <div className="w-full bg-gray-100 rounded-full h-2.5">
+        <div
+          className={`${couleur} h-2.5 rounded-full transition-all duration-500`}
+          style={{ width: `${progression}%` }}
+        />
+      </div>
     </div>
   );
 }
