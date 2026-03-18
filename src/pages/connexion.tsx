@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ChampSaisie from "../composants/ChampSaisie";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-
+import { Link } from "react-router-dom"; // pour la navigation vers inscription
 
 const Connexion: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -18,10 +18,8 @@ const Connexion: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = e.target;
-
     if (target instanceof HTMLInputElement) {
       const { name, value, type, checked } = target;
-
       if (name === "resetEmail") {
         setResetEmail(value);
       } else {
@@ -37,12 +35,10 @@ const Connexion: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.email || !formData.password) {
       setError("Veuillez remplir tous les champs.");
       return;
     }
-
     setError("");
     alert("Connexion réussie !");
   };
@@ -52,7 +48,6 @@ const Connexion: React.FC = () => {
       setResetError("Seuls les étudiants peuvent réinitialiser leur mot de passe.");
       return;
     }
-
     setResetError("");
     alert(`Réinitialisation pour ${resetEmail} réussie`);
     setShowModal(false);
@@ -67,9 +62,11 @@ const Connexion: React.FC = () => {
         {/* GAUCHE FORMULAIRE */}
         <div className="w-1/2 flex items-center justify-center bg-white p-10">
           <div className="w-[420px]">
+            {/* Logo */}
             <div className="mb-4 flex justify-center">
               <img src="/images/logo2.png" alt="Logo" className="h-12 object-contain" />
             </div>
+
             <p className="text-sm text-gray-500">Bienvenue !!!</p>
             <h1 className="text-3xl font-bold mb-6">Connexion</h1>
 
@@ -102,6 +99,7 @@ const Connexion: React.FC = () => {
 
               {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
 
+              {/* Se souvenir / Mot de passe oublié */}
               <div className="flex justify-between items-center text-sm mt-3">
                 <label className="flex items-center gap-2">
                   <input
@@ -122,23 +120,24 @@ const Connexion: React.FC = () => {
                 </button>
               </div>
 
+              {/* Bouton Se connecter */}
               <button
                 type="submit"
                 className="w-full mt-5 py-3 rounded-full bg-orange-500 text-white font-bold hover:bg-orange-600 transition"
               >
                 Se connecter
               </button>
-            <div className="flex justify-center items-center text-sm text-gray-500 mt-4 gap-2">
-  <span>Pas encore de compte ?</span>
-  <button
-    type="button"
-    onClick={() => setShowModal(true)}
-    className="text-orange-500 font-semibold hover:underline"
-  >
-    S’inscrire
-  </button>
-</div>
-              
+
+              {/* Pas encore de compte ? S’inscrire */}
+              <div className="flex justify-center items-center text-sm text-gray-500 mt-4 gap-2">
+                <span>Pas encore de compte ?</span>
+                <Link
+                  to="/inscription"
+                  className="text-orange-500 font-semibold hover:underline"
+                >
+                  S’inscrire
+                </Link>
+              </div>
             </form>
           </div>
         </div>
@@ -149,7 +148,7 @@ const Connexion: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL de réinitialisation */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex justify-center items-center">
           <div className="bg-white p-6 rounded-xl w-[380px]">
