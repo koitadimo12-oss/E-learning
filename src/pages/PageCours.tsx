@@ -1,32 +1,46 @@
-import type { Cours } from "../services/coursService";
-import BarreProgression from "../composants/BarreProgression";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import BarreNavigation from "../composants/BarreNavigation";
+import PiedPage from "../composants/PiedPage";
+import CarteCours from "../composants/CarteCours";
+import BarreRecherche from "../composants/BarreRecherche";
+import { listeCours, type Cours } from "../services/coursService";
+import type { Etudiant } from "../services/etudiantService";
 
 interface Props {
-  cours: Cours;
-  onVoirCours: (id: number) => void; // on garde l'interface comme demandé
+  etudiant: Etudiant | null;
+  onDeconnexion: () => void;
 }
 
-export default function CarteCours({ cours, onVoirCours }: Props) {
+export default function PageCour({ etudiant, onDeconnexion }: Props) {
+  const navigate = useNavigate();
+  const [recherche, setRecherche] = useState("");
+
+  const coursFiltres = useMemo(
+    () => listeCours.filter(c => c.titre.toLowerCase().includes(recherche.toLowerCase())),
+    [recherche]
+  );
+
   return (
-    <div
-      onClick={() => onVoirCours(cours.id)}
-      className="bg-white rounded-xl shadow hover:scale-105 transition cursor-pointer"
-    >
-      <img src={cours.image} className="w-full h-40 object-cover rounded-t-xl" />
+    <div className="min-h-screen bg-gray-100">
+      <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
 
-      <div className="p-4">
-        <h2 className="font-bold text-lg">{cours.titre}</h2>
-        <p className="text-sm text-gray-500 mb-2">{cours.instructeur}</p>
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <h1 className="text-3xl font-bold mb-2 text-gray-900">Tous les cours</h1>
+          <div className="md:w-80">
+            <BarreRecherche valeur={recherche} onChange={setRecherche} />
+          </div>
+        </div>
 
-        <BarreProgression progression={cours.progression ?? 0} />
+        <div className="mt-10 grid md:grid-cols-3 gap-6">
+          {coursFiltres.map(cours => (
+            <CarteCours key={cours.id} cours={cours} onVoirCours={() => navigate(`/cours/${cours.id}`)} />
+          ))}
+        </div>
+      </section>
 
-        <button
-          onClick={() => onVoirCours(cours.id)}
-          className="mt-3 w-full bg-orange-500 text-white py-2 rounded-lg"
-        >
-          Voir le cours
-        </button>
-      </div>
+      <PiedPage />
     </div>
   );
 }

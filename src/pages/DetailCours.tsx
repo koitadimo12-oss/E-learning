@@ -1,117 +1,103 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import BarreNavigation from "../composants/BarreNavigation";
-import { listeCours } from "../services/coursService";
-import type { Cours } from "../services/coursService";
-import { mettreAJourProgression } from "../services/etudiantService";
+import PiedPage from "../composants/PiedPage";
+import { listeCours, type Cours } from "../services/coursService";
 import type { Etudiant } from "../services/etudiantService";
+import { useState } from "react";
 
 interface Props {
-  etudiant: Etudiant;
+  etudiant: Etudiant | null;
   onDeconnexion: () => void;
 }
 
 export default function DetailCours({ etudiant, onDeconnexion }: Props) {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [cours, setCours] = useState<Cours | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const cours: Cours | undefined = listeCours.find(c => c.id === Number(id));
+
   const [score, setScore] = useState<number | null>(null);
   const [reponses, setReponses] = useState<{ [key: number]: string }>({});
-  const [erreurQuiz, setErreurQuiz] = useState<string>("");
 
-  useEffect(() => {
-    const c = listeCours.find(c => c.id === Number(id));
-    if (c) setCours(c || null);
-  }, [id]);
+  if (!cours) return <p>Cours introuvable</p>;
 
-  if (!cours) return <p className="p-10">Cours introuvable.</p>;
-
-  const handleChangerReponse = (qIndex: number, val: string) => {
-    setReponses(prev => ({ ...prev, [qIndex]: val }));
-    if (erreurQuiz) setErreurQuiz("");
+  const handleReponse = (index: number, valeur: string) => {
+    setReponses(prev => ({ ...prev, [index]: valeur }));
   };
 
-  const handleSoumettreQuiz = () => {
+  const calculerScore = () => {
     if (!cours.quiz) return;
-    if (cours.quiz.some((_, idx) => !reponses[idx])) {
-      setErreurQuiz("Veuillez répondre à toutes les questions avant de soumettre.");
-      return;
-    }
-    setErreurQuiz("");
-
     let s = 0;
-    cours.quiz.forEach((q, idx) => {
-      if (reponses[idx] === q.reponse) s++;
+    cours.quiz.forEach((q, i) => {
+      if (reponses[i] === q.reponse) s++;
     });
-    setScore(Math.round((s / cours.quiz.length) * 100));
-
-    // Mettre à jour la progression de l'étudiant (on met directement le score du quiz)
-    mettreAJourProgression(etudiant.id, cours.id, Math.round((s / cours.quiz.length) * 100));
+    setScore(s);
   };
 
   return (
     <div className="min-h-screen bg-gray-100">
       <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <h1 className="text-3xl font-bold mb-4">{cours.titre}</h1>
-        <p className="text-gray-600 mb-6">{cours.description}</p>
 
-        <div className="mb-10">
-          <h2 className="text-2xl font-semibold mb-4">Contenu du cours</h2>
-          <div className="space-y-4">
-            {cours.contenu?.map((p, idx) => (
-              <p key={idx} className="text-gray-700">{p}</p>
-            ))}
+      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16">
+        <h1 className="text-4xl font-bold mb-6">{cours.titre}</h1>
+
+        {cours.videoYoutube && (
+          <div className="mb-6 aspect-video">
+            <iframe
+              width="100%"
+              height="100%"
+              src={cours.videoYoutube}
+              title={cours.titre}
+              frameBorder="0"
+              allowFullScreen
+            />
           </div>
-        </div>
+        )}
 
-        {cours.quiz && cours.quiz.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-2xl font-semibold mb-4">
-              Quiz ({cours.quiz.length} questions)
-            </h2>
-            {cours.quiz.map((q, idx) => (
-              <div key={idx} className="mb-4 p-4 border rounded bg-white">
-                <p className="mb-2 font-medium">{idx + 1}. {q.question}</p>
-                {q.options.map((opt, oidx) => (
-                  <label key={oidx} className="block mb-1 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`q${idx}`}
-                      value={opt}
-                      checked={reponses[idx] === opt}
-                      onChange={() => handleChangerReponse(idx, opt)}
-                      className="mr-2"
-                    />
-                    {opt}
-                  </label>
-                ))}
+        {cours.contenu && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4">Contenu du cours</h2>
+            <ul className="list-disc list-inside">
+              {cours.contenu.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {cours.quiz && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4">Quiz</h2>
+            {cours.quiz.map((q, i) => (
+              <div key={i} className="mb-4">
+                <p className="font-semibold">{q.question}</p>
+                <div className="flex flex-col gap-2 mt-2">
+                  {q.options.map((opt, j) => (
+                    <button
+                      key={j}
+                      className={`px-4 py-2 border rounded ${
+                        reponses[i] === opt ? "bg-blue-600 text-white" : "bg-white"
+                      }`}
+                      onClick={() => handleReponse(i, opt)}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
               </div>
             ))}
 
-            {erreurQuiz && <p className="mt-2 text-red-600 font-medium">{erreurQuiz}</p>}
             <button
-              onClick={handleSoumettreQuiz}
+              onClick={calculerScore}
               className="mt-4 px-6 py-2 bg-green-600 text-white rounded"
             >
-              Soumettre le quiz
+              Calculer le score
             </button>
+
+            {score !== null && <p className="mt-4">Votre score : {score}/{cours.quiz.length}</p>}
           </div>
         )}
+      </section>
 
-        {score !== null && (
-          <div className="mb-6 p-4 bg-blue-100 rounded">
-            <p className="font-semibold">Votre score : {score}%</p>
-          </div>
-        )}
-
-        <button
-          onClick={() => navigate("/profil")}
-          className="px-6 py-2 bg-gray-600 text-white rounded"
-        >
-          Retour au profil
-        </button>
-      </div>
+      <PiedPage />
     </div>
   );
 }
