@@ -1,5 +1,5 @@
 import type { Cours } from "../services/coursService";
-import BarreProgression from "./BarreProgression";
+import BarreProgression from "../composants/BarreProgression";
 
 interface Props {
   cours: Cours;
