@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import type { Etudiant } from "./services/etudiantService";
 import Accueil from "./pages/Acceuil";
@@ -9,10 +9,24 @@ import Connexion from "./pages/Connexion";
 import Inscription from "./pages/Inscription";
 import Profil from "./pages/Profil";
 import TableauBord from "./pages/TableauBord";
+import { getSessionEtudiant, setSessionEtudiant } from "./services/etudiantService";
 
 export default function App() {
   const [etudiant, setEtudiant] = useState<Etudiant | null>(null);
-  const handleDeconnexion = () => setEtudiant(null);
+
+  useEffect(() => {
+    const session = getSessionEtudiant();
+    if (session) setEtudiant(session);
+  }, []);
+
+  useEffect(() => {
+    setSessionEtudiant(etudiant);
+  }, [etudiant]);
+
+  const handleDeconnexion = () => {
+    setEtudiant(null);
+    setSessionEtudiant(null);
+  };
 
   return (
     <BrowserRouter>
@@ -26,13 +40,7 @@ export default function App() {
 
         <Route
           path="/cours/:id"
-          element={
-            etudiant ? (
-              <DetailCours etudiant={etudiant} onDeconnexion={handleDeconnexion} />
-            ) : (
-              <Navigate to="/connexion" replace />
-            )
-          }
+          element={<DetailCours etudiant={etudiant} onDeconnexion={handleDeconnexion} />}
         />
 
         <Route path="/connexion" element={<Connexion setEtudiant={(e) => setEtudiant(e)} />} />

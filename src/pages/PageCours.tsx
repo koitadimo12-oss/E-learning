@@ -4,7 +4,7 @@ import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
 import CarteCours from "../composants/CarteCours";
 import BarreRecherche from "../composants/BarreRecherche";
-import { listeCours, type Cours } from "../services/coursService";
+import { listeCours } from "../services/coursService";
 import type { Etudiant } from "../services/etudiantService";
 
 interface Props {
