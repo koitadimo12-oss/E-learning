@@ -79,7 +79,7 @@ export const listeCours: Cours[] = [
     titre: "React JS : Développez des applis modernes",
     description:
       "Créez des applications web dynamiques en utilisant React JS et les hooks.",
-    image: "",
+    image: "/cours/react.png",
     instructeur: "M. Cheikh Fall",
     categorie: "Developpement Web",
     badge: "Programmation",
@@ -115,7 +115,7 @@ export const listeCours: Cours[] = [
     titre: "Mathématiques pour Lycéens",
     description:
       "Maîtrisez les concepts des maths du lycée : algèbre, géométrie, trigonométrie et prob...",
-    image: "",
+    image: "/cours/math.png",
     instructeur: "Mme Ndour",
     categorie: "Science",
     badge: "Sciences",
@@ -144,7 +144,7 @@ export const listeCours: Cours[] = [
     titre: "JavaScript pour Débutants",
     description:
       "Apprenez JavaScript depuis zéro : variables, fonctions, boucles et manipulation du DOM.",
-    image: "",
+    image: "/cours/python.png",
     instructeur: "M. Cheikh Fall",
     categorie: "Programmation",
     badge: "Programmation",
@@ -176,7 +176,7 @@ export const listeCours: Cours[] = [
     titre: "Sciences de la Communication",
     description:
       "Maîtrisez les bases pour communiquer clairement : structurer, convaincre et s'exprimer.",
-    image: "",
+    image: "/cours/science.png",
     instructeur: "Mme Ndour",
     categorie: "Soft Skills",
     badge: "Communication",

@@ -1,90 +1,230 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { connexionEtudiant } from "../services/etudiantService";
+import type { FormEvent } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { Link, useNavigate } from "react-router-dom";
+
 import type { Etudiant } from "../services/etudiantService";
+import { connexionEtudiant } from "../services/etudiantService";
+import ChampSaisie from "../composants/ChampSaisie";
 
-export default function Connexion({ setEtudiant }: { setEtudiant: (e: Etudiant) => void }) {
+export default function Connexion({
+  setEtudiant,
+}: {
+  setEtudiant: (e: Etudiant) => void;
+}) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [mdp, setMdp] = useState("");
-  const [erreur, setErreur] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    remember: false,
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [profil, setProfil] = useState("Etudiant");
+  const [resetError, setResetError] = useState("");
 
-  const handleConnexion = () => {
-    const user = connexionEtudiant(email, mdp);
-    if (user) {
-      setEtudiant(user);
-      navigate("/profil");
-    } else setErreur("Email ou mot de passe incorrect");
+  const validatePassword = (password: string) => {
+    const lettre = /[a-zA-Z]/.test(password);
+    const chiffre = /[0-9]/.test(password);
+    const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < 10 || password.length > 15) {
+      return "Le mot de passe doit contenir entre 10 et 15 caractères.";
+    }
+    if (!lettre || !chiffre || !special) {
+      return "Le mot de passe doit contenir lettres, chiffres et caractères spéciaux.";
+    }
+    return "";
+  };
+
+  const handleSubmit = (e?: FormEvent) => {
+    if (e) e.preventDefault();
+
+    if (!formData.email || !formData.password) {
+      setError("Veuillez remplir tous les champs.");
+      return;
+    }
+
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    const user = connexionEtudiant(formData.email, formData.password);
+    if (!user) {
+      setError("Aucun compte trouve. Inscrivez-vous d'abord.");
+      return;
+    }
+
+    setError("");
+    setEtudiant(user);
+    navigate("/profil");
+  };
+
+  const handleReset = () => {
+    if (profil !== "Etudiant") {
+      setResetError("Seuls les étudiants peuvent réinitialiser leur mot de passe.");
+      return;
+    }
+    setResetError("");
+    alert(`Réinitialisation pour ${resetEmail} réussie`);
+    setShowModal(false);
+    setResetEmail("");
+    setProfil("Etudiant");
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-950">
-      <div className="relative lg:w-1/2 min-h-[220px] lg:min-h-screen overflow-hidden">
-        <img
-          src="/Hero.png"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-90"
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/85 via-blue-800/60 to-orange-600/50" />
-        <div className="relative z-[1] h-full flex flex-col justify-end p-10 text-white">
-          <p className="text-sm uppercase tracking-widest text-blue-100/80">Kaay Niou Diang</p>
-          <h1 className="mt-2 text-3xl md:text-4xl font-bold leading-tight max-w-md">
-            Reprenez vos cours où vous vous êtes arrêté.
-          </h1>
-          <p className="mt-3 text-blue-50/90 max-w-md text-sm md:text-base">
-            Connexion sécurisée — votre progression est enregistrée sur cet appareil.
-          </p>
+    <div className="min-h-screen flex justify-center items-center bg-[#0a1b3a] px-3 py-6">
+      <div className="w-full max-w-[1200px] min-h-[700px] flex flex-col lg:flex-row rounded-2xl overflow-hidden shadow-2xl">
+        <div className="w-full lg:w-1/2 flex items-center justify-center bg-white p-6 sm:p-10">
+          <div className="w-full max-w-[420px]">
+            <div className="mb-4 flex justify-center">
+              <img
+                src="/logo2.png"
+                alt="Logo"
+                className="h-12 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
+
+            <p className="text-sm text-gray-500">Bienvenue !!!</p>
+            <h1 className="text-3xl font-bold mb-6">Connexion</h1>
+
+            <form onSubmit={handleSubmit}>
+              <ChampSaisie
+                label="Email"
+                type="email"
+                name="email"
+                value={formData.email}
+                placeholder="adresse email institutionnel"
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
+              />
+
+              <div className="relative mt-3">
+                <ChampSaisie
+                  label="Mot de passe"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  placeholder="********"
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setFormData((prev) => ({ ...prev, password: next }));
+                    const passwordError = validatePassword(next);
+                    setError(passwordError ? passwordError : "");
+                  }}
+                />
+                <span
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-9 cursor-pointer text-gray-400 hover:text-gray-600 text-xl"
+                  aria-hidden
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                </span>
+              </div>
+
+              {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+
+              <div className="flex justify-between items-center text-sm mt-3">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="remember"
+                    checked={formData.remember}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, remember: e.target.checked }))
+                    }
+                  />
+                  Se souvenir de moi
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetError("");
+                    setShowModal(true);
+                  }}
+                  className="text-blue-500 hover:underline cursor-pointer"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full mt-5 py-3 rounded-full bg-orange-500 text-white font-bold hover:bg-orange-600 transition text-center cursor-pointer"
+              >
+                Se connecter
+              </button>
+
+              <div className="flex justify-center items-center text-sm text-gray-500 mt-4 gap-2">
+                <span>Pas encore de compte ?</span>
+                <Link to="/inscription" className="text-orange-500 font-semibold hover:underline">
+                  S’inscrire
+                </Link>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div className="hidden lg:flex w-1/2 bg-[#f5e6db] items-center justify-center">
+          <img
+            src="/Hero.png"
+            alt="illustration"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-gray-50">
-        <div className="w-full max-w-md bg-white p-8 md:p-10 rounded-2xl shadow-xl border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900">Connexion</h2>
-          <p className="text-sm text-gray-500 mt-1">Accédez à votre profil et à vos cours.</p>
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-xl w-[380px]">
+            <h3 className="text-lg font-semibold mb-3">Réinitialisation</h3>
 
-          <label className="block mt-6 text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            autoComplete="email"
-            placeholder="vous@exemple.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition"
-          />
-
-          <label className="block mt-4 text-sm font-medium text-gray-700">Mot de passe</label>
-          <input
-            type="password"
-            autoComplete="current-password"
-            placeholder="••••••••"
-            value={mdp}
-            onChange={(e) => setMdp(e.target.value)}
-            className="mt-1 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition"
-            onKeyDown={(e) => e.key === "Enter" && handleConnexion()}
-          />
-
-          {erreur && <p className="text-red-600 text-sm mt-3 font-medium">{erreur}</p>}
-
-          <button
-            type="button"
-            onClick={handleConnexion}
-            className="mt-6 w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow-md hover:shadow-lg"
-          >
-            Se connecter
-          </button>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Pas encore de compte ?{" "}
-            <button
-              type="button"
-              onClick={() => navigate("/inscription")}
-              className="text-orange-600 font-semibold hover:underline"
+            <label className="block text-sm font-medium text-gray-700 mb-1">Profil :</label>
+            <select
+              name="profil"
+              value={profil}
+              onChange={(e) => setProfil(e.target.value)}
+              className="w-full p-2 border rounded mt-1 mb-3"
             >
-              S&apos;inscrire
-            </button>
-          </p>
+              <option value="Etudiant">Étudiant</option>
+              <option value="Personnel">Personnel</option>
+              <option value="Tuteur">Tuteur</option>
+            </select>
+
+            <ChampSaisie
+              label="Email institutionnel"
+              type="email"
+              name="resetEmail"
+              value={resetEmail}
+              placeholder="votre email"
+              onChange={(e) => setResetEmail(e.target.value)}
+            />
+
+            {resetError && <p className="text-red-500 text-xs mt-2">{resetError}</p>}
+
+            <div className="flex justify-end mt-4 gap-2">
+              <button type="button" onClick={() => setShowModal(false)}>
+                Annuler
+              </button>
+              <button type="button" onClick={handleReset} className="px-4 py-2 bg-blue-500 text-white rounded">
+                Valider
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

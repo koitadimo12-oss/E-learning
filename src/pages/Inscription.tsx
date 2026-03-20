@@ -1,94 +1,202 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+
+import ChampSaisie from "../composants/ChampSaisie";
 import { inscriptionEtudiant } from "../services/etudiantService";
 import type { Etudiant } from "../services/etudiantService";
 
-export default function Inscription({ setEtudiant }: { setEtudiant: (e: Etudiant) => void }) {
+export default function Inscription({
+  setEtudiant,
+}: {
+  setEtudiant: (e: Etudiant) => void;
+}) {
   const navigate = useNavigate();
-  const [nom, setNom] = useState("");
-  const [email, setEmail] = useState("");
-  const [mdp, setMdp] = useState("");
+  const [formData, setFormData] = useState({
+    nom: "",
+    prenom: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    profil: "Etudiant",
+  });
 
-  const handleInscription = () => {
-    const user = inscriptionEtudiant(nom, email, mdp);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState("");
+
+  const validatePassword = (password: string) => {
+    const lettre = /[a-zA-Z]/.test(password);
+    const chiffre = /[0-9]/.test(password);
+    const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < 10 || password.length > 15 || !lettre || !chiffre || !special) {
+      return "Mot de passe invalide";
+    }
+    return "";
+  };
+
+  const handleSubmit = (e?: FormEvent) => {
+    if (e) e.preventDefault();
+
+    const { nom, prenom, email, password, confirmPassword, profil } = formData;
+    if (!nom || !prenom || !email || !password || !confirmPassword) {
+      setError("Veuillez remplir tous les champs");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Les mots de passe ne correspondent pas");
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    if (profil !== "Etudiant") {
+      setError("Seuls les étudiants sont autorisés");
+      return;
+    }
+
+    const user = inscriptionEtudiant(
+      `${formData.nom} ${formData.prenom}`.trim(),
+      formData.email,
+      formData.password
+    );
+    setError("");
     setEtudiant(user);
     navigate("/profil");
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-950">
-      <div className="relative lg:w-1/2 min-h-[220px] lg:min-h-screen overflow-hidden order-2 lg:order-1">
-        <img
-          src="/Hero.png"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-90"
-        />
-        <div className="absolute inset-0 bg-gradient-to-tr from-orange-600/55 via-blue-900/75 to-blue-950/90" />
-        <div className="relative z-[1] h-full flex flex-col justify-end p-10 text-white">
-          <p className="text-sm uppercase tracking-widest text-orange-100/90">Bienvenue</p>
-          <h1 className="mt-2 text-3xl md:text-4xl font-bold leading-tight max-w-md">
-            Créez votre compte en quelques secondes.
-          </h1>
-          <p className="mt-3 text-blue-50/90 max-w-md text-sm md:text-base">
-            Suivez vos progrès, passez les quiz et construisez votre parcours.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-3 py-6">
+      <div className="w-full max-w-[1100px] min-h-[680px] rounded-2xl overflow-hidden shadow-2xl flex flex-col lg:flex-row">
+        <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-6">
+          <div className="w-full max-w-[340px]">
+            <div className="flex justify-center mb-4">
+              <img
+                src="/logo2.png"
+                alt="logo"
+                className="h-10 drop-shadow-md"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-gray-50 order-1 lg:order-2">
-        <div className="w-full max-w-md bg-white p-8 md:p-10 rounded-2xl shadow-xl border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-900">Inscription</h2>
-          <p className="text-sm text-gray-500 mt-1">Rejoignez la plateforme Kaay Niou Diang.</p>
+            <h2 className="text-xl font-bold text-center mb-1">Inscription</h2>
+            <p className="text-gray-500 text-sm text-center mb-4">Créer votre compte</p>
 
-          <label className="block mt-6 text-sm font-medium text-gray-700">Nom</label>
-          <input
-            type="text"
-            autoComplete="name"
-            placeholder="Votre nom"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            className="mt-1 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-          />
-
-          <label className="block mt-4 text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            autoComplete="email"
-            placeholder="vous@exemple.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-          />
-
-          <label className="block mt-4 text-sm font-medium text-gray-700">Mot de passe</label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            placeholder="••••••••"
-            value={mdp}
-            onChange={(e) => setMdp(e.target.value)}
-            className="mt-1 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
-            onKeyDown={(e) => e.key === "Enter" && handleInscription()}
-          />
-
-          <button
-            type="button"
-            onClick={handleInscription}
-            className="mt-6 w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition shadow-md hover:shadow-lg"
-          >
-            S&apos;inscrire
-          </button>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Déjà inscrit ?{" "}
-            <button
-              type="button"
-              onClick={() => navigate("/connexion")}
-              className="text-blue-600 font-semibold hover:underline"
+            <form
+              className="space-y-2"
+              onSubmit={handleSubmit}
             >
-              Se connecter
-            </button>
-          </p>
+              <ChampSaisie
+                label="Nom"
+                type="text"
+                name="nom"
+                value={formData.nom}
+                onChange={(e) => setFormData((prev) => ({ ...prev, nom: e.target.value }))}
+              />
+
+              <ChampSaisie
+                label="Prénom"
+                type="text"
+                name="prenom"
+                value={formData.prenom}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, prenom: e.target.value }))
+                }
+              />
+
+              <ChampSaisie
+                label="Email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
+              />
+
+              <div className="relative">
+                <ChampSaisie
+                  label="Mot de passe"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setFormData((prev) => ({ ...prev, password: next }));
+                    setError("");
+                  }}
+                />
+                <span
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-9 cursor-pointer text-gray-400 hover:text-gray-600"
+                  aria-hidden
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                </span>
+              </div>
+
+              <div className="relative">
+                <ChampSaisie
+                  label="Confirmer mot de passe"
+                  type={showConfirm ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={(e) => {
+                    setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }));
+                    setError("");
+                  }}
+                />
+                <span
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-9 cursor-pointer text-gray-400 hover:text-gray-600"
+                  aria-hidden
+                >
+                  {showConfirm ? <FiEyeOff /> : <FiEye />}
+                </span>
+              </div>
+
+              <select
+                name="profil"
+                value={formData.profil}
+                onChange={(e) => setFormData((prev) => ({ ...prev, profil: e.target.value }))}
+                className="w-full p-2 mt-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              >
+                <option value="Etudiant">Étudiant</option>
+                <option value="Personnel">Personnel</option>
+                <option value="Tuteur">Tuteur</option>
+              </select>
+
+              {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+
+              <button
+                type="submit"
+                onClick={() => {}}
+                className="w-full mt-6 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition text-center cursor-pointer"
+              >
+                S’inscrire
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div className="hidden lg:flex w-1/2 bg-[#f5e6db] items-center justify-center">
+          <img
+            src="/Hero.png"
+            alt="illustration"
+            className="w-full h-full object-contain"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
         </div>
       </div>
     </div>
