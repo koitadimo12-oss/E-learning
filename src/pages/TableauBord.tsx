@@ -65,19 +65,19 @@ export default function TableauBord({
       : 0;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-white">
       <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
 
       <section className="max-w-6xl mx-auto px-6 md:px-10 py-12">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold">Bonjour, {etudiant.nom}</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Bonjour, {etudiant.nom}</h1>
+            <p className="text-gray-600 mt-2 max-w-xl">
               Voici votre tableau de bord : progression, recommandations et historique.
             </p>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6 w-full md:w-80">
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 w-full md:w-80">
             <p className="text-sm text-gray-500 font-semibold">Progression moyenne</p>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl font-bold text-blue-700">{moyenne}%</span>
@@ -87,8 +87,9 @@ export default function TableauBord({
               <BarreProgression progression={moyenne} />
             </div>
             <button
+              type="button"
               onClick={() => navigate("/profil")}
-              className="mt-4 w-full bg-gray-900 text-white py-2 rounded-lg hover:bg-gray-800 transition"
+              className="mt-4 w-full bg-gray-900 text-white py-3 rounded-xl hover:bg-gray-800 transition font-semibold"
             >
               Voir mon profil
             </button>

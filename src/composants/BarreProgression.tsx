@@ -10,9 +10,8 @@ export default function BarreProgression({ progression }: Props) {
 
   return (
     <div>
-      <div className="flex justify-between text-xs text-gray-500 mb-1">
-        <span>Progression</span>
-        <span className="font-semibold text-blue-700">{progression}%</span>
+      <div className="text-xs text-gray-500 mb-1">
+        <span className="font-semibold text-gray-700">{progression}% Complété</span>
       </div>
       <div className="w-full bg-gray-100 rounded-full h-2.5">
         <div

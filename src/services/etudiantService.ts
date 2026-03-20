@@ -12,12 +12,14 @@ const SESSION_KEY = "knd_session_etudiant";
 const etudiantsParDefaut: Etudiant[] = [
   {
     id: 1,
-    nom: "Abdou Wahab",
-    email: "wahab@example.com",
+    nom: "Mamadou",
+    email: "mamadou@example.com",
     motDePasse: "123456",
     coursSuivis: [
-      { idCours: 1, progression: 40 },
-      { idCours: 2, progression: 20 },
+      { idCours: 1, progression: 60 },
+      { idCours: 2, progression: 0 },
+      { idCours: 3, progression: 0 },
+      { idCours: 4, progression: 0 },
     ],
   },
 ];

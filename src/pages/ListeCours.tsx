@@ -17,7 +17,6 @@ export default function ListeCours({
   const navigate = useNavigate();
   const [recherche, setRecherche] = useState("");
   const [categorie, setCategorie] = useState("Toutes");
-  const [niveau, setNiveau] = useState("Tous");
 
   const categories = useMemo(
     () => ["Toutes", ...new Set(listeCours.map((c) => c.categorie))],
@@ -36,76 +35,61 @@ export default function ListeCours({
         cours.description.toLowerCase().includes(recherche.toLowerCase()) ||
         cours.instructeur.toLowerCase().includes(recherche.toLowerCase());
       const matchCategorie = categorie === "Toutes" || cours.categorie === categorie;
-      const matchNiveau = niveau === "Tous" || cours.niveau === niveau;
-      return matchRecherche && matchCategorie && matchNiveau;
+      return matchRecherche && matchCategorie;
     });
-  }, [recherche, categorie, niveau, etudiant]);
+  }, [recherche, categorie, etudiant]);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
 
-      <section className="max-w-6xl mx-auto px-6 md:px-10 py-16">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-          <div>
-            <h1 className="text-4xl font-bold">Catalogue premium</h1>
-            <p className="mt-2 text-gray-600">
-              Filtrez vos cours par categorie, niveau et recherche.
-            </p>
-          </div>
-          <div className="w-full lg:w-[420px]">
+      <section className="bg-white border-y border-gray-100">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 py-10">
+          <h1 className="text-3xl font-bold text-center text-gray-900">Cours</h1>
+
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-[1fr_260px_auto] gap-3 items-center">
             <BarreRecherche valeur={recherche} onChange={setRecherche} />
+
+            <select
+              value={categorie}
+              onChange={(e) => setCategorie(e.target.value)}
+              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat === "Toutes" ? "Catégorie" : cat}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold"
+            >
+              Filtrer
+            </button>
           </div>
-        </div>
 
-        <div className="mt-6 bg-white rounded-xl p-4 shadow-sm border border-gray-100 grid sm:grid-cols-3 gap-3">
-          <select
-            value={categorie}
-            onChange={(e) => setCategorie(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg"
-          >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                Categorie: {cat}
-              </option>
-            ))}
-          </select>
-          <select
-            value={niveau}
-            onChange={(e) => setNiveau(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg"
-          >
-            <option value="Tous">Niveau: Tous</option>
-            <option value="Debutant">Niveau: Debutant</option>
-            <option value="Intermediaire">Niveau: Intermediaire</option>
-          </select>
-          <button
-            onClick={() => {
-              setRecherche("");
-              setCategorie("Toutes");
-              setNiveau("Tous");
-            }}
-            className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-          >
-            Reinitialiser
-          </button>
-        </div>
+          <div className="mt-3 text-right text-sm text-gray-500">
+            {coursFiltres.length} cours trouvés
+          </div>
 
-        <div className="mt-8 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="mt-10 grid md:grid-cols-2 gap-6">
           {coursFiltres.map((cours) => (
             <CarteCours
               key={cours.id}
               cours={cours}
-              onVoirCours={() => navigate(`/cours/${cours.id}`)}
+              onVoirCours={(id) => navigate(`/cours/${id}`)}
             />
           ))}
-        </div>
+          </div>
 
-        {coursFiltres.length === 0 && (
-          <p className="mt-6 text-center text-gray-500">
-            Aucun cours ne correspond aux filtres selectionnes.
-          </p>
-        )}
+          {coursFiltres.length === 0 && (
+            <p className="mt-10 text-center text-gray-500 font-medium">
+              Aucun cours ne correspond à vos filtres.
+            </p>
+          )}
+        </div>
       </section>
 
       <PiedPage />

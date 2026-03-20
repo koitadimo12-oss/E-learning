@@ -5,6 +5,7 @@ import { listeCours, type Cours } from "../services/coursService";
 import BarreNavigation from "../composants/BarreNavigation";
 import BarreProgression from "../composants/BarreProgression";
 import CarteCours from "../composants/CarteCours";
+import PiedPage from "../composants/PiedPage";
 
 export default function Profil({
   etudiant,
@@ -34,43 +35,64 @@ export default function Profil({
       : 0;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-50">
       <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-bold">Profil étudiant</h2>
-            <p className="text-gray-600 mt-2">Nom : {etudiant.nom}</p>
-            <p className="text-gray-600">Email : {etudiant.email}</p>
+
+      <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
+          <div className="flex-1">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Profil étudiant</h2>
+            <div className="mt-6 space-y-2 text-gray-700">
+              <p>
+                <span className="font-semibold text-gray-900">Nom :</span> {etudiant.nom}
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900">Email :</span> {etudiant.email}
+              </p>
+            </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6 w-full md:w-80">
-            <p className="text-sm text-gray-500 font-semibold">Progression moyenne</p>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 w-full md:w-96">
+            <p className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Progression moyenne</p>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-blue-700">{moyenne}%</span>
-              <span className="text-gray-500">
-                sur {etudiant.coursSuivis.length} cours
-              </span>
+              <span className="text-4xl font-bold text-blue-700 tabular-nums">{moyenne}%</span>
+              <span className="text-gray-500 text-sm">sur {etudiant.coursSuivis.length} cours</span>
             </div>
             <div className="mt-4">
               <BarreProgression progression={moyenne} />
             </div>
             <button
+              type="button"
               onClick={() => navigate("/tableau-bord")}
-              className="mt-4 w-full bg-gray-900 text-white py-2 rounded-lg hover:bg-gray-800 transition"
+              className="mt-5 w-full bg-gray-900 text-white py-3 rounded-xl hover:bg-gray-800 transition font-semibold shadow-md"
             >
               Ouvrir le tableau de bord
             </button>
           </div>
         </div>
 
-        <h3 className="text-2xl mt-10 mb-4">Mes cours suivis</h3>
-        <div className="grid md:grid-cols-4 gap-6">
-          {coursEtudiant.length > 0 ? coursEtudiant.map(c =>
-            <CarteCours key={c.id} cours={c} onVoirCours={() => navigate(`/cours/${c.id}`)} />
-          ) : <p>Vous n'avez pas encore commencé de cours.</p>}
+        <h3 className="text-2xl font-bold mt-12 mb-6 text-gray-900">Mes cours suivis</h3>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {coursEtudiant.length > 0 ? (
+            coursEtudiant.map((c) => (
+              <CarteCours key={c.id} cours={c} onVoirCours={(id) => navigate(`/cours/${id}`)} />
+            ))
+          ) : (
+            <p className="text-gray-600 col-span-full bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+              Vous n&apos;avez pas encore commencé de cours.{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/cours")}
+                className="text-blue-600 font-semibold hover:underline"
+              >
+                Explorer le catalogue
+              </button>
+            </p>
+          )}
         </div>
       </section>
+
+      <PiedPage />
     </div>
   );
 }

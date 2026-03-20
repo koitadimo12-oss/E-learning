@@ -9,7 +9,7 @@ type Props = {
 export default function BarreNavigation({ etudiant, onDeconnexion }: Props) {
   const navigate = useNavigate();
 
-  const handleProfilClick = () => {
+  const handleProfileClick = () => {
     if (!etudiant) navigate("/connexion");
     else navigate("/profil");
   };
@@ -21,55 +21,72 @@ export default function BarreNavigation({ etudiant, onDeconnexion }: Props) {
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <img src="/logo2.png" alt="Logo Kaay Niou Diang" className="w-12 h-12 object-contain" />
+          <img
+            src="/logo2.png"
+            alt="Logo Kaay Niou Diang"
+            className="w-11 h-11 object-contain"
+            onError={(e) => {
+              // fallback visuel: si le fichier image n'existe pas, on garde un espace via la taille
+              const img = e.currentTarget;
+              img.style.display = "none";
+            }}
+          />
           <h1 className="font-bold text-xl sm:text-2xl text-blue-600">Kaay Niou Diang</h1>
         </div>
 
-        <ul className="flex flex-wrap gap-3 sm:gap-6 font-medium items-center text-sm sm:text-base">
-          <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/")}>
-            Accueil
-          </li>
-          <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/cours")}>
-            Cours
-          </li>
-          <li className="hover:text-blue-600 cursor-pointer" onClick={handleProfilClick}>
-            Profil
-          </li>
+        <div className="flex items-center gap-4 justify-between">
+          <ul className="hidden sm:flex flex-wrap gap-6 font-medium items-center text-sm sm:text-base">
+            <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/")}>
+              Accueil
+            </li>
+            <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/cours")}>
+              Cours
+            </li>
+            <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/")} aria-label="À propos">
+              À propos
+            </li>
+            <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/")} aria-label="Contact">
+              Contact
+            </li>
+          </ul>
+
           {!etudiant ? (
-            <>
-              <li
-                className="hover:text-blue-600 cursor-pointer"
-                onClick={() => navigate("/inscription")}
-              >
-                Inscription
-              </li>
-              <li
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer"
-                onClick={() => navigate("/connexion")}
-              >
-                Connexion
-              </li>
-            </>
+            <button
+              type="button"
+              onClick={() => navigate("/connexion")}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer transition font-semibold"
+            >
+              Connexion
+            </button>
           ) : (
-            <>
-              <li
-                className="hover:text-blue-600 cursor-pointer"
-                onClick={() => navigate("/tableau-bord")}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleProfileClick}
+                className="flex items-center gap-2 text-sm sm:text-base hover:text-blue-600 transition cursor-pointer"
               >
-                Tableau de bord
-              </li>
-              <li
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 cursor-pointer"
+                <span className="text-gray-800 font-medium">Bonjour, {etudiant.nom}</span>
+                <span
+                  className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-700 font-bold"
+                  aria-hidden
+                >
+                  {etudiant.nom.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("")}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   onDeconnexion();
                   navigate("/");
                 }}
+                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 cursor-pointer transition font-semibold"
               >
-                Deconnexion
-              </li>
-            </>
+                Déconnexion
+              </button>
+            </div>
           )}
-        </ul>
+        </div>
       </div>
     </nav>
   );

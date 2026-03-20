@@ -12,7 +12,7 @@ interface Props {
   onDeconnexion: () => void;
 }
 
-export default function PageCour({ etudiant, onDeconnexion }: Props) {
+export default function PageCours({ etudiant, onDeconnexion }: Props) {
   const navigate = useNavigate();
   const [recherche, setRecherche] = useState("");
 
@@ -35,7 +35,7 @@ export default function PageCour({ etudiant, onDeconnexion }: Props) {
 
         <div className="mt-10 grid md:grid-cols-3 gap-6">
           {coursFiltres.map(cours => (
-            <CarteCours key={cours.id} cours={cours} onVoirCours={() => navigate(`/cours/${cours.id}`)} />
+            <CarteCours key={cours.id} cours={cours} onVoirCours={(id) => navigate(`/cours/${id}`)} />
           ))}
         </div>
       </section>
