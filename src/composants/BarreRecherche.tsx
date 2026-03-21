@@ -1,9 +1,5 @@
-interface Props {
-  valeur: string;
-  onChange: (val: string) => void;
-}
-
-export default function BarreRecherche({ valeur, onChange }: Props) {
+export default function BarreRecherche(props: any) {
+  const { valeur, onChange } = props;
   return (
     <input
       type="text"

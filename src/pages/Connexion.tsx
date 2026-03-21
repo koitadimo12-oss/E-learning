@@ -1,17 +1,13 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent, SyntheticEvent } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 
-import type { Etudiant } from "../services/etudiantService";
 import { connexionEtudiant } from "../services/etudiantService";
 import ChampSaisie from "../composants/ChampSaisie";
 
-export default function Connexion({
-  setEtudiant,
-}: {
-  setEtudiant: (e: Etudiant) => void;
-}) {
+export default function Connexion(props: any) {
+  const { setEtudiant } = props;
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
@@ -102,7 +98,7 @@ export default function Connexion({
                 name="email"
                 value={formData.email}
                 placeholder="adresse email institutionnel"
-                onChange={(e) =>
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setFormData((prev) => ({ ...prev, email: e.target.value }))
                 }
               />
@@ -114,7 +110,7 @@ export default function Connexion({
                   name="password"
                   value={formData.password}
                   placeholder="********"
-                  onChange={(e) => {
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const next = e.target.value;
                     setFormData((prev) => ({ ...prev, password: next }));
                     const passwordError = validatePassword(next);
@@ -138,7 +134,7 @@ export default function Connexion({
                     type="checkbox"
                     name="remember"
                     checked={formData.remember}
-                    onChange={(e) =>
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setFormData((prev) => ({ ...prev, remember: e.target.checked }))
                     }
                   />
@@ -179,7 +175,7 @@ export default function Connexion({
             src="/Hero.png"
             alt="illustration"
             className="w-full h-full object-cover"
-            onError={(e) => {
+            onError={(e: SyntheticEvent<HTMLImageElement>) => {
               e.currentTarget.style.display = "none";
             }}
           />
@@ -195,7 +191,7 @@ export default function Connexion({
             <select
               name="profil"
               value={profil}
-              onChange={(e) => setProfil(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setProfil(e.target.value)}
               className="w-full p-2 border rounded mt-1 mb-3"
             >
               <option value="Etudiant">Étudiant</option>
@@ -209,7 +205,7 @@ export default function Connexion({
               name="resetEmail"
               value={resetEmail}
               placeholder="votre email"
-              onChange={(e) => setResetEmail(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setResetEmail(e.target.value)}
             />
 
             {resetError && <p className="text-red-500 text-xs mt-2">{resetError}</p>}

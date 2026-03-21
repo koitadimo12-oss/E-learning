@@ -1,15 +1,10 @@
-type Props = {
-  image?: string;
-  nom: string;
-  texte: string;
-};
-
-export default function CarteTemoignage({ image, nom, texte }: Props) {
+export default function CarteTemoignage(props: any) {
+  const { image, nom, texte } = props;
   const initials = nom
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
+    .map((p: string) => p[0]?.toUpperCase())
     .join("");
 
   return (

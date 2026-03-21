@@ -3,7 +3,12 @@ export interface Etudiant {
   nom: string;
   email: string;
   motDePasse: string;
-  coursSuivis: { idCours: number; progression: number }[];
+  coursSuivis: {
+    idCours: number;
+    progression: number;
+    /** IDs des chapitres marqués comme lus (débloque le quiz quand assez de chapitres sont faits). */
+    chapitresCompletes?: number[];
+  }[];
 }
 
 const ETUDIANTS_KEY = "knd_etudiants";
@@ -74,8 +79,23 @@ export function mettreAJourProgression(idEtudiant: number, idCours: number, prog
   const progressionSecurisee = Math.max(0, Math.min(100, progression));
 
   if (coursSuivi) coursSuivi.progression = Math.max(coursSuivi.progression, progressionSecurisee);
-  else etudiant.coursSuivis.push({ idCours, progression: progressionSecurisee });
+  else etudiant.coursSuivis.push({ idCours, progression: progressionSecurisee, chapitresCompletes: [] });
 
+  sauvegarderEtudiants(etudiants);
+}
+
+/** Met à jour la liste des chapitres lus pour un cours (IDs de chapitres). */
+export function mettreAJourChapitresCompletes(idEtudiant: number, idCours: number, idsChapitres: number[]) {
+  const etudiant = etudiants.find((e) => e.id === idEtudiant);
+  if (!etudiant) return;
+  const uniques = [...new Set(idsChapitres)].sort((a, b) => a - b);
+  let suivi = etudiant.coursSuivis.find((cs) => cs.idCours === idCours);
+  if (!suivi) {
+    suivi = { idCours, progression: 0, chapitresCompletes: uniques };
+    etudiant.coursSuivis.push(suivi);
+  } else {
+    suivi.chapitresCompletes = uniques;
+  }
   sauvegarderEtudiants(etudiants);
 }
 

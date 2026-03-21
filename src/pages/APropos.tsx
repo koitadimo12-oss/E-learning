@@ -1,13 +1,7 @@
-import type { Etudiant } from "../services/etudiantService";
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
 
-type AProposProps = {
-  etudiant: Etudiant | null;
-  onDeconnexion: () => void;
-};
-
-export default function APropos(props: AProposProps) {
+export default function APropos(props: any) {
   const { etudiant, onDeconnexion } = props;
 
   return (

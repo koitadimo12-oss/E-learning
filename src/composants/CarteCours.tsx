@@ -3,12 +3,8 @@ import { useMemo, useState } from "react";
 import type { Cours } from "../services/coursService";
 import BarreProgression from "./BarreProgression";
 
-interface Props {
-  cours: Cours;
-  onVoirCours: (id: number) => void; // on garde l'interface comme demandé
-}
-
-export default function CarteCours({ cours, onVoirCours }: Props) {
+export default function CarteCours(props: any) {
+  const { cours, onVoirCours } = props as { cours: Cours; onVoirCours: (id: number) => void };
   const [imgErreur, setImgErreur] = useState(false);
   const tag2 = useMemo(() => {
     const left = cours.titre.split(":")[0]?.trim();

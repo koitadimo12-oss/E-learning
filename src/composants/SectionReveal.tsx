@@ -1,8 +1,7 @@
-import type { PropsWithChildren } from "react";
-
 import { useInViewOnce } from "../hooks/useInViewOnce";
 
-export default function SectionReveal({ children }: PropsWithChildren) {
+export default function SectionReveal(props: any) {
+  const { children } = props;
   const { ref, visible } = useInViewOnce<HTMLDivElement>({
     threshold: 0.15,
     rootMargin: "0px 0px -10% 0px",

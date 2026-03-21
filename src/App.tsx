@@ -13,7 +13,7 @@ import APropos from "./pages/APropos";
 import Contact from "./pages/Contact";
 import { getSessionEtudiant, setSessionEtudiant } from "./services/etudiantService";
 
-export default function App() {
+export default function App(_props: any) {
   const [etudiant, setEtudiant] = useState<Etudiant | null>(null);
 
   useEffect(() => {
@@ -42,11 +42,17 @@ export default function App() {
 
         <Route
           path="/cours/:id"
-          element={<DetailCours etudiant={etudiant} onDeconnexion={handleDeconnexion} />}
+          element={
+            <DetailCours
+              etudiant={etudiant}
+              onDeconnexion={handleDeconnexion}
+              setEtudiant={(e: Etudiant) => setEtudiant(e)}
+            />
+          }
         />
 
-        <Route path="/connexion" element={<Connexion setEtudiant={(e) => setEtudiant(e)} />} />
-        <Route path="/inscription" element={<Inscription setEtudiant={(e) => setEtudiant(e)} />} />
+        <Route path="/connexion" element={<Connexion setEtudiant={(e: Etudiant) => setEtudiant(e)} />} />
+        <Route path="/inscription" element={<Inscription setEtudiant={(e: Etudiant) => setEtudiant(e)} />} />
 
         <Route
           path="/profil"

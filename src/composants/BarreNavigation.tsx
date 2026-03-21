@@ -1,12 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import type { Etudiant } from "../services/etudiantService";
-
-type Props = {
-  etudiant: Etudiant | null;
-  onDeconnexion: () => void;
-};
-
-export default function BarreNavigation({ etudiant, onDeconnexion }: Props) {
+export default function BarreNavigation(props: any) {
+  const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
@@ -71,7 +65,7 @@ export default function BarreNavigation({ etudiant, onDeconnexion }: Props) {
                   className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-700 font-bold"
                   aria-hidden
                 >
-                  {etudiant.nom.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("")}
+                  {etudiant.nom.split(" ").filter(Boolean).slice(0, 2).map((p: string) => p[0]).join("")}
                 </span>
               </button>
 

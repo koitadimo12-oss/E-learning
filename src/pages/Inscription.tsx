@@ -1,17 +1,13 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 import ChampSaisie from "../composants/ChampSaisie";
 import { inscriptionEtudiant } from "../services/etudiantService";
-import type { Etudiant } from "../services/etudiantService";
 
-export default function Inscription({
-  setEtudiant,
-}: {
-  setEtudiant: (e: Etudiant) => void;
-}) {
+export default function Inscription(props: any) {
+  const { setEtudiant } = props;
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nom: "",
@@ -100,7 +96,9 @@ export default function Inscription({
                 type="text"
                 name="nom"
                 value={formData.nom}
-                onChange={(e) => setFormData((prev) => ({ ...prev, nom: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setFormData((prev) => ({ ...prev, nom: e.target.value }))
+                }
               />
 
               <ChampSaisie
@@ -108,7 +106,7 @@ export default function Inscription({
                 type="text"
                 name="prenom"
                 value={formData.prenom}
-                onChange={(e) =>
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setFormData((prev) => ({ ...prev, prenom: e.target.value }))
                 }
               />
@@ -118,7 +116,7 @@ export default function Inscription({
                 type="email"
                 name="email"
                 value={formData.email}
-                onChange={(e) =>
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setFormData((prev) => ({ ...prev, email: e.target.value }))
                 }
               />
@@ -129,7 +127,7 @@ export default function Inscription({
                   type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
-                  onChange={(e) => {
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const next = e.target.value;
                     setFormData((prev) => ({ ...prev, password: next }));
                     setError("");
@@ -150,7 +148,7 @@ export default function Inscription({
                   type={showConfirm ? "text" : "password"}
                   name="confirmPassword"
                   value={formData.confirmPassword}
-                  onChange={(e) => {
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }));
                     setError("");
                   }}

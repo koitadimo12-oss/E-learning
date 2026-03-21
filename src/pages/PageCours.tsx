@@ -5,14 +5,8 @@ import PiedPage from "../composants/PiedPage";
 import CarteCours from "../composants/CarteCours";
 import BarreRecherche from "../composants/BarreRecherche";
 import { listeCours } from "../services/coursService";
-import type { Etudiant } from "../services/etudiantService";
-
-interface Props {
-  etudiant: Etudiant | null;
-  onDeconnexion: () => void;
-}
-
-export default function PageCours({ etudiant, onDeconnexion }: Props) {
+export default function PageCours(props: any) {
+  const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
   const [recherche, setRecherche] = useState("");
 
@@ -35,7 +29,7 @@ export default function PageCours({ etudiant, onDeconnexion }: Props) {
 
         <div className="mt-10 grid md:grid-cols-3 gap-6">
           {coursFiltres.map(cours => (
-            <CarteCours key={cours.id} cours={cours} onVoirCours={(id) => navigate(`/cours/${id}`)} />
+            <CarteCours key={cours.id} cours={cours} onVoirCours={(id: number) => navigate(`/cours/${id}`)} />
           ))}
         </div>
       </section>

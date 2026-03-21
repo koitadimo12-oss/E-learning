@@ -5,15 +5,8 @@ import PiedPage from "../composants/PiedPage";
 import CarteCours from "../composants/CarteCours";
 import BarreRecherche from "../composants/BarreRecherche";
 import { listeCours } from "../services/coursService";
-import type { Etudiant } from "../services/etudiantService";
-
-export default function ListeCours({
-  etudiant,
-  onDeconnexion,
-}: {
-  etudiant: Etudiant | null;
-  onDeconnexion: () => void;
-}) {
+export default function ListeCours(props: any) {
+  const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
   const [recherche, setRecherche] = useState("");
   const [categorie, setCategorie] = useState("Toutes");
@@ -25,7 +18,7 @@ export default function ListeCours({
 
   const coursFiltres = useMemo(() => {
     const coursAvecProgression = listeCours.map((cours) => {
-      const suivi = etudiant?.coursSuivis.find((cs) => cs.idCours === cours.id);
+      const suivi = etudiant?.coursSuivis.find((cs: { idCours: number; progression: number }) => cs.idCours === cours.id);
       return { ...cours, progression: suivi?.progression ?? 0 };
     });
 
@@ -79,7 +72,7 @@ export default function ListeCours({
             <CarteCours
               key={cours.id}
               cours={cours}
-              onVoirCours={(id) => navigate(`/cours/${id}`)}
+              onVoirCours={(id: number) => navigate(`/cours/${id}`)}
             />
           ))}
           </div>

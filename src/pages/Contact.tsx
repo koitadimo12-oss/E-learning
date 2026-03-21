@@ -1,13 +1,7 @@
-import type { Etudiant } from "../services/etudiantService";
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
 
-type ContactProps = {
-  etudiant: Etudiant | null;
-  onDeconnexion: () => void;
-};
-
-export default function Contact(props: ContactProps) {
+export default function Contact(props: any) {
   const { etudiant, onDeconnexion } = props;
 
   return (

@@ -1,8 +1,5 @@
-interface Props {
-  progression: number;
-}
-
-export default function BarreProgression({ progression }: Props) {
+export default function BarreProgression(props: any) {
+  const { progression } = props;
   const couleur =
     progression >= 80 ? "bg-green-400" :
     progression >= 40 ? "bg-orange-400" :

@@ -1,24 +1,21 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import type { Etudiant } from "../services/etudiantService";
 import { listeCours, type Cours } from "../services/coursService";
+import type { Etudiant } from "../services/etudiantService";
+
+type CoursSuivi = Etudiant["coursSuivis"][number];
 import BarreNavigation from "../composants/BarreNavigation";
 import BarreProgression from "../composants/BarreProgression";
 import CarteCours from "../composants/CarteCours";
 import PiedPage from "../composants/PiedPage";
 
-export default function Profil({
-  etudiant,
-  onDeconnexion,
-}: {
-  etudiant: Etudiant;
-  onDeconnexion: () => void;
-}) {
+export default function Profil(props: any) {
+  const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
 
   const coursEtudiant = useMemo((): Cours[] => {
     return etudiant.coursSuivis
-      .map((cs) => {
+      .map((cs: CoursSuivi) => {
         const c = listeCours.find((c) => c.id === cs.idCours);
         if (!c) return null;
         return { ...c, progression: cs.progression };
@@ -29,7 +26,7 @@ export default function Profil({
   const moyenne =
     etudiant.coursSuivis.length > 0
       ? Math.round(
-          etudiant.coursSuivis.reduce((acc, cs) => acc + cs.progression, 0) /
+          etudiant.coursSuivis.reduce((acc: number, cs: CoursSuivi) => acc + cs.progression, 0) /
             etudiant.coursSuivis.length
         )
       : 0;
@@ -75,7 +72,7 @@ export default function Profil({
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {coursEtudiant.length > 0 ? (
             coursEtudiant.map((c) => (
-              <CarteCours key={c.id} cours={c} onVoirCours={(id) => navigate(`/cours/${id}`)} />
+              <CarteCours key={c.id} cours={c} onVoirCours={(id: number) => navigate(`/cours/${id}`)} />
             ))
           ) : (
             <p className="text-gray-600 col-span-full bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">

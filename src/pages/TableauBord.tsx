@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import type { Etudiant } from "../services/etudiantService";
 import { listeCours, type Cours } from "../services/coursService";
+import type { Etudiant } from "../services/etudiantService";
+
+type CoursSuivi = Etudiant["coursSuivis"][number];
 import BarreNavigation from "../composants/BarreNavigation";
 import BarreProgression from "../composants/BarreProgression";
 import PiedPage from "../composants/PiedPage";
-
-type TableauBordProps = {
-  etudiant: Etudiant;
-  onDeconnexion: () => void;
-};
 
 type SectionTableauBord =
   | "overview"
@@ -21,13 +18,7 @@ type SectionTableauBord =
   | "quiz"
   | "contenu";
 
-type MenuButtonProps = {
-  label: string;
-  onClick: () => void;
-  active?: boolean;
-};
-
-function MenuButton(props: MenuButtonProps) {
+function MenuButton(props: any) {
   const { label, onClick, active = false } = props;
   return (
     <button
@@ -59,7 +50,7 @@ function ImageOuBadge(props: ImageOuBadgeProps) {
   return <img src={cours.image} alt={cours.titre} className="w-16 h-16 object-cover rounded-lg" />;
 }
 
-export default function TableauBord(props: TableauBordProps) {
+export default function TableauBord(props: any) {
   const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
   const [sectionActive, setSectionActive] = useState<SectionTableauBord>("overview");
@@ -112,7 +103,8 @@ export default function TableauBord(props: TableauBordProps) {
   const moyenne =
     totalCoursSuivis > 0
       ? Math.round(
-          etudiant.coursSuivis.reduce((acc, cs) => acc + cs.progression, 0) / totalCoursSuivis
+          etudiant.coursSuivis.reduce((acc: number, cs: CoursSuivi) => acc + cs.progression, 0) /
+            totalCoursSuivis
         )
       : 0;
 

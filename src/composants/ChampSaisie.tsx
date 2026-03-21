@@ -1,22 +1,5 @@
-import type React from "react";
-
-interface ChampSaisieProps {
-  label: string;
-  type?: string;
-  name: string;
-  value: string;
-  placeholder?: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
-export default function ChampSaisie({
-  label,
-  type = "text",
-  name,
-  value,
-  placeholder,
-  onChange,
-}: ChampSaisieProps) {
+export default function ChampSaisie(props: any) {
+  const { label, type = "text", name, value, placeholder, onChange } = props;
   return (
     <div className="flex flex-col mb-4">
       <label className="mb-1 text-sm font-medium text-gray-700">{label}</label>

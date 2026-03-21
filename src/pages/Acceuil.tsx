@@ -8,17 +8,11 @@ import CarteTemoignage from "../composants/CarteTemoignages";
 import SectionReveal from "../composants/SectionReveal";
 import { listeCours } from "../services/coursService";
 import type { Cours } from "../services/coursService";
-import type { Etudiant } from "../services/etudiantService";
 import { useCountUp } from "../hooks/useCountUp";
 import { useInViewOnce } from "../hooks/useInViewOnce";
 
-export default function Acceuil({
-  etudiant,
-  onDeconnexion,
-}: {
-  etudiant: Etudiant | null;
-  onDeconnexion: () => void;
-}) {
+export default function Acceuil(props: any) {
+  const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
   const location = useLocation();
   const coursPopulaires = useMemo(() => listeCours.slice(0, 6), []);
@@ -265,7 +259,8 @@ export default function Acceuil({
               <p className="text-sm font-semibold text-blue-700">Étape 3</p>
               <h3 className="font-bold mt-2">Passez le quiz</h3>
               <p className="text-gray-600 mt-2">
-                Le quiz (6 questions) détermine automatiquement votre progression.
+                Après la fin du cours (chapitres validés), le quiz se débloque : il faut au moins 2/3 de bonnes
+                réponses pour valider.
               </p>
             </div>
           </div>
@@ -333,8 +328,8 @@ export default function Acceuil({
                   <span className="text-orange-500 text-lg leading-none">+</span>
                 </summary>
                 <p className="text-gray-600 mt-2">
-                  À la fin du cours, le quiz de 6 questions est noté, puis votre progression est mise à jour
-                  automatiquement.
+                  Vous validez les chapitres au fil du parcours ; le quiz se débloque vers la fin du cours. Avec au
+                  moins deux tiers de bonnes réponses, votre progression est mise à jour.
                 </p>
               </details>
             </div>
@@ -358,7 +353,7 @@ export default function Acceuil({
                 className="animate-knd-fade-up"
                 style={{ animationDelay: `${Math.min(i, 5) * 80}ms` }}
               >
-                <CarteCours cours={cours} onVoirCours={(id) => navigate(`/cours/${id}`)} />
+                <CarteCours cours={cours} onVoirCours={(id: number) => navigate(`/cours/${id}`)} />
               </div>
             ))}
           </div>
