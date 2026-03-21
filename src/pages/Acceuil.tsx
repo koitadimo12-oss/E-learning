@@ -20,14 +20,14 @@ export default function Acceuil({
   onDeconnexion: () => void;
 }) {
   const navigate = useNavigate();
-  const coursPopulaires = useMemo(() => listeCours.slice(0, 4), []);
+  const coursPopulaires = useMemo(() => listeCours.slice(0, 6), []);
   const categoriesUniques = useMemo(
     () => [...new Set(listeCours.map((c) => c.categorie))],
     []
   );
 
   const { ref: heroStatsRef, visible: heroStatsVisible } = useInViewOnce();
-  const countCours = useCountUp(20, 1600, heroStatsVisible);
+  const countCours = useCountUp(listeCours.length, 1600, heroStatsVisible);
 
   const temoignages = [
     {
@@ -94,9 +94,7 @@ export default function Acceuil({
 
         <div className="relative max-w-6xl mx-auto px-6 md:px-10 py-16 md:py-24">
           <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight animate-knd-fade-up">
-              Plateforme de cours en ligne pour progresser rapidement
-            </h1>
+            
             <p className="mt-4 text-lg text-blue-50/95 animate-knd-fade-up knd-delay-100">
               Apprenez, progressez et construisez vos compétences avec des cours structurés et un suivi de
               progression.

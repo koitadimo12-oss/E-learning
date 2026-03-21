@@ -42,10 +42,18 @@ export default function BarreNavigation({ etudiant, onDeconnexion }: Props) {
             <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/cours")}>
               Cours
             </li>
-            <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/")} aria-label="À propos">
+            <li
+              className="hover:text-blue-600 cursor-pointer"
+              onClick={() => navigate("/a-propos")}
+              aria-label="À propos"
+            >
               À propos
             </li>
-            <li className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/")} aria-label="Contact">
+            <li
+              className="hover:text-blue-600 cursor-pointer"
+              onClick={() => navigate("/contact")}
+              aria-label="Contact"
+            >
               Contact
             </li>
           </ul>

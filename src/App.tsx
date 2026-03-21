@@ -9,6 +9,8 @@ import Connexion from "./pages/Connexion";
 import Inscription from "./pages/Inscription";
 import Profil from "./pages/Profil";
 import TableauBord from "./pages/TableauBord";
+import APropos from "./pages/APropos";
+import Contact from "./pages/Contact";
 import { getSessionEtudiant, setSessionEtudiant } from "./services/etudiantService";
 
 export default function App() {
@@ -67,6 +69,9 @@ export default function App() {
             )
           }
         />
+
+        <Route path="/a-propos" element={<APropos etudiant={etudiant} onDeconnexion={handleDeconnexion} />} />
+        <Route path="/contact" element={<Contact etudiant={etudiant} onDeconnexion={handleDeconnexion} />} />
 
       </Routes>
     </BrowserRouter>

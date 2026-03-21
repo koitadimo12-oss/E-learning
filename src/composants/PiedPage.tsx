@@ -48,6 +48,24 @@ export default function PiedPage() {
                 Connexion
               </button>
             </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => navigate("/a-propos")}
+                className="hover:text-orange-300 transition-colors cursor-pointer text-left"
+              >
+                A propos
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => navigate("/contact")}
+                className="hover:text-orange-300 transition-colors cursor-pointer text-left"
+              >
+                Contact
+              </button>
+            </li>
           </ul>
         </div>
 
