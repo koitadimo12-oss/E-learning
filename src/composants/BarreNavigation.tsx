@@ -24,7 +24,7 @@ export default function BarreNavigation({ etudiant, onDeconnexion }: Props) {
           <img
             src="/logo2.png"
             alt="Logo Kaay Niou Diang"
-            className="w-11 h-11 object-contain"
+            className="w-16 h-16 object-contain"
             onError={(e) => {
               // fallback visuel: si le fichier image n'existe pas, on garde un espace via la taille
               const img = e.currentTarget;
@@ -44,17 +44,10 @@ export default function BarreNavigation({ etudiant, onDeconnexion }: Props) {
             </li>
             <li
               className="hover:text-blue-600 cursor-pointer"
-              onClick={() => navigate("/a-propos")}
+              onClick={() => navigate("/#a-propos")}
               aria-label="À propos"
             >
               À propos
-            </li>
-            <li
-              className="hover:text-blue-600 cursor-pointer"
-              onClick={() => navigate("/contact")}
-              aria-label="Contact"
-            >
-              Contact
             </li>
           </ul>
 

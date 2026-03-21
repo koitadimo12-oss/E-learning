@@ -85,7 +85,7 @@ export default function Connexion({
               <img
                 src="/logo2.png"
                 alt="Logo"
-                className="h-12 object-contain"
+                className="h-16 object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
                 }}

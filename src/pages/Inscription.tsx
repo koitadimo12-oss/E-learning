@@ -81,7 +81,7 @@ export default function Inscription({
               <img
                 src="/logo2.png"
                 alt="logo"
-                className="h-10 drop-shadow-md"
+                className="h-14 drop-shadow-md"
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
                 }}
