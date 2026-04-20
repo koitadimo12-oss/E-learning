@@ -10,179 +10,280 @@ import { listeCours } from "../services/coursService";
 import type { Cours } from "../services/coursService";
 import { useCountUp } from "../hooks/useCountUp";
 import { useInViewOnce } from "../hooks/useInViewOnce";
+import { getDernierCoursId, getNotificationsDemo, getObjectifDuJour } from "../services/stockageLocal";
+import { toucherStreak } from "../services/etudiantService";
+import type { Etudiant } from "../services/etudiantService";
 
-export default function Acceuil(props: any) {
+type Props = { etudiant: Etudiant | null; onDeconnexion: () => void };
+
+export default function Acceuil(props: Props) {
   const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
   const location = useLocation();
-  const coursPopulaires = useMemo(() => listeCours.slice(0, 6), []);
-  const categoriesUniques = useMemo(
-    () => [...new Set(listeCours.map((c) => c.categorie))],
-    []
-  );
+
+  const coursPopulaires = useMemo(() => [...listeCours].sort(() => 0.5 - Math.random()).slice(0, 6), []);
+  const categoriesUniques = useMemo(() => [...new Set(listeCours.map((c) => c.categorie))], []);
+  const dernierId = getDernierCoursId();
+  const dernierCours = dernierId ? listeCours.find((c) => c.id === dernierId) : undefined;
+  const objectif = getObjectifDuJour();
+  const notifs = getNotificationsDemo();
 
   const { ref: heroStatsRef, visible: heroStatsVisible } = useInViewOnce();
   const countCours = useCountUp(listeCours.length, 1600, heroStatsVisible);
 
-  const temoignages = [
-    {
-      nom: "Awa",
-      texte: "Les cours sont clairs et bien structurés. J'ai progressé rapidement en math.",
-    },
-    {
-      nom: "Mamadou",
-      texte: "Super plateforme ! J'ai trouvé exactement le niveau que je cherchais, et le quiz aide vraiment.",
-    },
-    {
-      nom: "Fatou",
-      texte: "Une bonne expérience mobile et des explications accessibles. Je recommande vivement.",
-    },
-  ];
-
-  const pourquoi = [
-    {
-      titre: "Qualité",
-      image: "/images/qualite.png",
-      texte: "Des cours construits par des pédagogues pour apprendre efficacement.",
-    },
-    {
-      titre: "Apprentissage",
-      image: "/images/apprentissage.png",
-      texte: "Un rythme adapté à votre disponibilité, depuis n'importe où.",
-    },
-    {
-      titre: "Certificat",
-      image: "/images/certificat.png",
-      texte: "Un parcours structuré avec des acquis mesurés pour progresser.",
-    },
-  ];
-
-  const badgesConfiance = [
-    "Apprenants motivés",
-    "Contenu structuré",
-    "Quiz & suivi",
-    "Accessible mobile",
-    "Kaay Niou Diang",
-  ];
+  useEffect(() => {
+    if (etudiant) toucherStreak(etudiant.id);
+  }, [etudiant?.id]);
 
   useEffect(() => {
     if (location.hash === "#a-propos") {
       const section = document.getElementById("a-propos");
-      if (section) {
-        section.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      section?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [location.hash]);
 
+  const temoignages = [
+    { nom: "Awa", texte: "Les cours sont clairs et bien structurés. J’ai progressé rapidement." },
+    { nom: "Mamadou", texte: "Quiz utiles et communauté par école : ça change tout." },
+    { nom: "Fatou", texte: "Les challenges entre écoles motivent vraiment à aller au bout des projets." },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
-      <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 overflow-x-hidden">
+      <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} fixe />
 
-      {/* Hero — conservé + embellissements (blobs, zoom léger, compteur animé) */}
-      <section className="relative overflow-hidden min-h-[520px] md:min-h-[580px]">
-        <img
-          src="/Hero.png"
-          alt="Hero Kaay Niou Diang"
-          className="absolute inset-0 w-full h-full object-cover animate-knd-ken-burns"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/75 via-blue-700/45 to-transparent" />
+      {/* Offset pour barre fixe */}
+      <div className="pt-[76px] sm:pt-[84px]" />
 
+      {/* Hero — mesh, typographie forte, glass */}
+      <section className="relative knd-mesh-hero knd-animated-gradient text-white">
         <div
-          className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-orange-400/25 blur-3xl animate-knd-float-slow"
+          className="pointer-events-none absolute top-24 right-[10%] w-40 h-40 rounded-full bg-orange-500/20 blur-3xl knd-orbit-dot"
           aria-hidden
         />
-        <div
-          className="pointer-events-none absolute bottom-0 left-1/3 w-96 h-96 rounded-full bg-blue-400/20 blur-3xl animate-knd-float-slow knd-delay-200"
-          aria-hidden
-        />
-
         <div className="relative max-w-6xl mx-auto px-6 md:px-10 py-16 md:py-24">
-          <div className="max-w-2xl">
-            
-            <p className="mt-4 text-lg text-blue-50/95 animate-knd-fade-up knd-delay-100">
-              Apprenez, progressez et construisez vos compétences avec des cours structurés et un suivi de
-              progression.
-            </p>
+          <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
+            <div>
+              <p className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.2em] uppercase text-blue-200/90">
+                <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+                Kaay Niou Diang
+              </p>
+              <h2 className="mt-5 text-4xl sm:text-5xl md:text-6xl font-black leading-[1.05] tracking-tight">
+                Apprenez sans friction.
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-white to-blue-200">
+                  Progressez avec votre école.
+                </span>
+              </h2>
+              <p className="mt-6 text-lg text-blue-100/90 max-w-xl leading-relaxed">
+                Cours YouTube, quiz intelligents, favoris & notes locales, communauté par établissement et compétitions
+                inter-écoles — une expérience pensée pour la vie réelle des étudiants.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row gap-4">
+                <button
+                  type="button"
+                  onClick={() => navigate("/cours")}
+                  className="px-8 py-4 rounded-2xl bg-orange-500 hover:bg-orange-400 text-white font-bold shadow-lg shadow-orange-500/25 transition hover:-translate-y-0.5"
+                >
+                  Explorer les cours
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/demo")}
+                  className="px-8 py-4 rounded-2xl border border-blue-300/40 text-blue-100 font-semibold hover:bg-white/10 transition"
+                >
+                  Mode démo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => (etudiant ? navigate("/tableau-bord") : navigate("/inscription"))}
+                  className="px-8 py-4 rounded-2xl knd-glass text-white font-semibold hover:bg-white/10 transition"
+                >
+                  {etudiant ? "Mon tableau de bord" : "Créer un compte"}
+                </button>
+              </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 animate-knd-fade-up knd-delay-200">
-              <button
-                onClick={() => navigate("/cours")}
-                className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-xl shadow-lg hover:bg-orange-600 transition hover:scale-[1.02] active:scale-[0.98] animate-knd-pulse-cta"
-              >
-                Explorer les cours
-              </button>
-              <button
-                onClick={() => (etudiant ? navigate("/profil") : navigate("/inscription"))}
-                className="px-6 py-3 bg-white/10 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/15 transition backdrop-blur-sm"
-              >
-                {etudiant ? "Aller au profil" : "Créer un compte"}
-              </button>
+              <div ref={heroStatsRef} className="mt-12 grid grid-cols-3 gap-3 sm:gap-4 max-w-lg">
+                {[
+                  { label: "Cours", val: `${countCours}+` },
+                  { label: "Écoles", val: "6+" },
+                  { label: "Streak max", val: "∞" },
+                ].map((s) => (
+                  <div key={s.label} className="knd-glass rounded-2xl px-3 py-4 text-center">
+                    <p className="text-2xl sm:text-3xl font-black tabular-nums">{s.val}</p>
+                    <p className="text-[10px] sm:text-xs uppercase tracking-widest text-blue-100/80">{s.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div ref={heroStatsRef} className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white/10 border border-white/20 rounded-xl p-4 backdrop-blur-md hover:bg-white/15 transition-colors duration-300">
-                <p className="text-3xl font-bold text-white tabular-nums">{countCours}+</p>
-                <p className="text-white/80">Cours disponibles</p>
-              </div>
-              <div className="bg-white/10 border border-white/20 rounded-xl p-4 backdrop-blur-md hover:bg-white/15 transition-colors duration-300">
-                <p className="text-3xl font-bold text-white">Quiz</p>
-                <p className="text-white/80">Pour vérifier vos acquis</p>
-              </div>
-              <div className="bg-white/10 border border-white/20 rounded-xl p-4 backdrop-blur-md hover:bg-white/15 transition-colors duration-300">
-                <p className="text-3xl font-bold text-white">Suivi</p>
-                <p className="text-white/80">Progression des cours</p>
+            <div className="relative">
+              <div className="knd-glass rounded-3xl p-6 md:p-8 space-y-5">
+                <p className="text-sm font-bold text-orange-200 uppercase tracking-widest">Aperçu plateforme</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {["Cours & quiz", "Challenges", "Communauté", "Classements"].map((t) => (
+                    <div
+                      key={t}
+                      className="rounded-2xl bg-white/5 border border-white/10 px-4 py-5 text-sm font-semibold hover:bg-white/10 transition cursor-default"
+                    >
+                      {t}
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-2xl overflow-hidden border border-white/10 aspect-video bg-black/40">
+                  <img
+                    src="/Hero.png"
+                    alt=""
+                    className="w-full h-full object-cover opacity-90"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Nouvelle section animée — bandeau confiance (n’enlève rien au-dessus) */}
-      <div className="relative bg-slate-900 text-white py-4 overflow-hidden border-y border-white/10">
-        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-slate-900 to-transparent z-10" />
-        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-slate-900 to-transparent z-10" />
-        <div className="flex whitespace-nowrap animate-knd-marquee">
-          {[...badgesConfiance, ...badgesConfiance].map((label, i) => (
-            <span key={`${label}-${i}`} className="mx-10 text-sm font-medium text-blue-100/90 tracking-wide">
-              ✦ {label}
-            </span>
-          ))}
+      {/* Bandeau notifications démo */}
+      {etudiant && (
+        <div className="bg-slate-900/95 border-y border-white/5">
+          <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <p className="text-sm text-slate-300">
+              <span className="font-semibold text-white">Notifications</span> — {notifs.filter((n) => !n.lu).length} non lues
+              (démo)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {notifs.slice(0, 2).map((n) => (
+                <span
+                  key={n.id}
+                  className="text-xs px-3 py-1 rounded-full bg-blue-500/15 text-blue-200 border border-blue-500/20"
+                >
+                  {n.titre}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      <SectionReveal>
-        <section className="py-16 max-w-6xl mx-auto px-6 md:px-10">
-          <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Pourquoi nous choisir ?</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {pourquoi.map((p, i) => (
-              <div
-                key={p.titre}
-                className="bg-white rounded-xl shadow-md p-6 text-center border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                style={{ animationDelay: `${i * 90}ms` }}
-              >
-                <img src={p.image} alt={p.titre} className="w-16 mx-auto mb-4 drop-shadow-sm" />
-                <h3 className="font-semibold mb-2">{p.titre}</h3>
-                <p className="text-gray-600">{p.texte}</p>
+      {/* Bloc étudiant connecté */}
+      {etudiant && (
+        <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-white/5">
+          <div className="max-w-6xl mx-auto px-6 md:px-10 py-14">
+            <h3 className="text-2xl md:text-3xl font-bold text-white">Votre accueil étudiant</h3>
+            <p className="text-slate-400 mt-2">
+              {etudiant.ecoleCanonique} · {etudiant.niveauEtude}
+            </p>
+            <div className="mt-8 grid md:grid-cols-3 gap-6">
+              <div className="rounded-2xl bg-slate-800/80 border border-white/10 p-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-orange-300">Streak</p>
+                <p className="text-4xl font-black mt-2">🔥 {etudiant.streak ?? 0} jours</p>
+                <p className="text-sm text-slate-400 mt-2">Revenez chaque jour pour maintenir votre série.</p>
               </div>
-            ))}
+              <div className="rounded-2xl bg-slate-800/80 border border-white/10 p-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-blue-300">Objectif du jour</p>
+                <p className="text-base font-medium mt-3 leading-relaxed text-slate-200">{objectif}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-800/80 border border-white/10 p-6 flex flex-col">
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">Reprendre</p>
+                {dernierCours ? (
+                  <>
+                    <p className="font-bold mt-3 text-lg">{dernierCours.titre}</p>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/cours/${dernierCours.id}`)}
+                      className="mt-auto pt-4 w-full py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-orange-400 hover:text-white transition"
+                    >
+                      Continuer
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/cours")}
+                    className="mt-4 py-3 rounded-xl bg-blue-600 text-white font-bold"
+                  >
+                    Choisir un cours
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/favoris")}
+                className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5"
+              >
+                ❤️ Mes favoris
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/challenges")}
+                className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5"
+              >
+                ⚔️ Challenges
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/classements")}
+                className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5"
+              >
+                🏆 Classements
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Bento fonctionnalités */}
+      <SectionReveal>
+        <section className="py-20 bg-white dark:bg-slate-950">
+          <div className="max-w-6xl mx-auto px-6 md:px-10">
+            <h3 className="text-3xl md:text-4xl font-bold text-center text-gray-900 dark:text-white">Une plateforme complète</h3>
+            <p className="text-center text-gray-600 dark:text-slate-400 mt-3 max-w-2xl mx-auto">
+              Normalisation des écoles (alias), gamification, projets étudiants et compétition — sans sacrifier la clarté.
+            </p>
+            <div className="mt-12 grid md:grid-cols-3 gap-5">
+              {[
+                {
+                  t: "Écoles unifiées",
+                  d: "Liste contrôlée + autocomplete. UNIPRO = univers professionnel : tout est normalisé.",
+                  c: "from-blue-600/40 to-indigo-600/30",
+                },
+                {
+                  t: "Parcours cours",
+                  d: "YouTube intégré, playlist, progression auto, quiz 2/3 pour valider.",
+                  c: "from-orange-500/40 to-rose-600/30",
+                },
+                {
+                  t: "Réseau & défis",
+                  d: "Communauté par école, chat simulé, challenges inter-écoles et classements.",
+                  c: "from-emerald-500/35 to-teal-600/25",
+                },
+              ].map((b) => (
+                <div
+                  key={b.t}
+                  className={`rounded-3xl p-8 bg-gradient-to-br ${b.c} border border-white/10 text-white shadow-xl`}
+                >
+                  <h4 className="text-xl font-bold">{b.t}</h4>
+                  <p className="mt-3 text-sm text-white/85 leading-relaxed">{b.d}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </SectionReveal>
 
-      {/* Nouvelle section — domaines couverts */}
       <SectionReveal>
-        <section className="py-14 bg-gradient-to-br from-blue-50 via-white to-orange-50/40 border-y border-gray-100">
+        <section className="py-16 bg-gray-100 dark:bg-slate-900/50 border-y border-gray-200 dark:border-white/5">
           <div className="max-w-6xl mx-auto px-6 md:px-10 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Domaines couverts</h2>
-            <p className="mt-2 text-gray-600 max-w-2xl mx-auto">
-              Des parcours variés pour monter en compétences, du développement aux soft skills.
-            </p>
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Domaines couverts</h3>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              {categoriesUniques.map((cat, i) => (
+              {categoriesUniques.map((cat) => (
                 <span
                   key={cat}
-                  className="px-4 py-2 rounded-full text-sm font-semibold bg-white/90 border border-blue-100 text-blue-800 shadow-sm hover:shadow-md hover:scale-105 transition-transform duration-300"
-                  style={{ animationDelay: `${i * 60}ms` }}
+                  className="px-4 py-2 rounded-full text-sm font-semibold bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-blue-700 dark:text-blue-100 hover:border-orange-400/50 transition"
                 >
                   {cat}
                 </span>
@@ -193,12 +294,36 @@ export default function Acceuil(props: any) {
       </SectionReveal>
 
       <SectionReveal>
-        <section className="py-16 bg-white border-y border-gray-100">
+        <section className="py-16 max-w-6xl mx-auto px-6 md:px-10">
+          <h3 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Cours populaires</h3>
+          <div className="mt-10 grid md:grid-cols-3 gap-6">
+            {coursPopulaires.map((cours: Cours) => (
+              <div key={cours.id} className="dark:[&_.bg-white]:bg-slate-900 dark:[&_.text-gray-900]:text-white dark:[&_.border-gray-100]:border-slate-800">
+                <CarteCours cours={cours} onVoirCours={(id: number) => navigate(`/cours/${id}`)} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 flex justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/cours")}
+              className="px-8 py-3 rounded-2xl bg-orange-500 text-white font-bold hover:bg-orange-400 transition"
+            >
+              Voir tout le catalogue
+            </button>
+          </div>
+        </section>
+      </SectionReveal>
+
+      <SectionReveal>
+        <section className="py-16 bg-gray-100 dark:bg-slate-900/30 border-y border-gray-200 dark:border-white/5">
           <div className="max-w-6xl mx-auto px-6 md:px-10">
-            <h2 className="text-3xl font-bold mb-10 text-center text-gray-900">Témoignages</h2>
-            <div className="grid md:grid-cols-3 gap-6">
+            <h3 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Témoignages</h3>
+            <div className="mt-10 grid md:grid-cols-3 gap-6">
               {temoignages.map((t) => (
-                <CarteTemoignage key={t.nom} nom={t.nom} texte={t.texte} />
+                <div key={t.nom} className="[&_p]:text-gray-700 dark:[&_p]:text-slate-200 [&_h3]:text-gray-900 dark:[&_h3]:text-white">
+                  <CarteTemoignage nom={t.nom} texte={t.texte} />
+                </div>
               ))}
             </div>
           </div>
@@ -207,131 +332,52 @@ export default function Acceuil(props: any) {
 
       <SectionReveal>
         <section id="a-propos" className="py-16 max-w-6xl mx-auto px-6 md:px-10">
-          <div className="bg-white rounded-2xl shadow border border-gray-100 p-8 md:p-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">A propos de Kaay Niou Diang</h2>
-            <p className="mt-4 text-gray-600 leading-7">
-              Kaay Niou Diang est une plateforme d&apos;apprentissage en ligne qui aide les etudiants a apprendre a
-              leur rythme. Notre objectif est simple : proposer des cours clairs, des quiz utiles et un suivi de
-              progression facile a comprendre.
+          <div className="knd-glass rounded-3xl p-8 md:p-12 text-white">
+            <h3 className="text-3xl md:text-4xl font-bold">À propos de Kaay Niou Diang</h3>
+            <p className="mt-4 text-blue-100/90 leading-relaxed">
+              Kaay Niou Diang est une plateforme d&apos;apprentissage en ligne qui aide les étudiants à apprendre à leur
+              rythme avec des cours clairs, des quiz utiles, une communauté active et des challenges motivants.
             </p>
-
-            <div className="mt-8 grid md:grid-cols-3 gap-6">
-              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6">
-                <h3 className="font-bold text-gray-900">Notre mission</h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Rendre l&apos;apprentissage accessible avec des contenus pratiques, progressifs et modernes.
-                </p>
-              </div>
-              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6">
-                <h3 className="font-bold text-gray-900">Notre methode</h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Chaque cours contient des chapitres structurés, puis un quiz pour verifier les acquis.
-                </p>
-              </div>
-              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6">
-                <h3 className="font-bold text-gray-900">Notre vision</h3>
-                <p className="mt-2 text-sm text-gray-600">
-                  Construire une communaute d&apos;apprenants autonomes, confiants et capables de creer de vrais
-                  projets.
-                </p>
-              </div>
+            <div className="mt-8 grid md:grid-cols-3 gap-4">
+              {[
+                {
+                  titre: "Notre mission",
+                  texte: "Rendre l'apprentissage accessible avec des contenus pratiques, progressifs et modernes.",
+                },
+                {
+                  titre: "Notre méthode",
+                  texte: "Chaque cours suit une structure simple : leçons, notes personnelles, quiz et progression.",
+                },
+                {
+                  titre: "Notre vision",
+                  texte: "Construire une communauté d'apprenants autonomes capables de créer de vrais projets.",
+                },
+              ].map((item) => (
+                <div key={item.titre} className="rounded-2xl bg-white/5 border border-white/10 p-5">
+                  <h4 className="font-bold text-white">{item.titre}</h4>
+                  <p className="mt-2 text-sm text-blue-100/90">{item.texte}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
       </SectionReveal>
 
       <SectionReveal>
-        <section className="py-16 max-w-6xl mx-auto px-6 md:px-10">
-          <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Comment ça marche</h2>
-          <div className="grid md:grid-cols-3 gap-6 relative">
-            <div className="hidden md:block absolute top-12 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-blue-200 via-orange-200 to-blue-200 -z-0 rounded-full" aria-hidden />
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 relative z-[1] hover:shadow-lg transition-shadow duration-300">
-              <p className="text-sm font-semibold text-blue-700">Étape 1</p>
-              <h3 className="font-bold mt-2">Inscrivez-vous</h3>
-              <p className="text-gray-600 mt-2">Créez votre compte et commencez à suivre vos progrès.</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 relative z-[1] hover:shadow-lg transition-shadow duration-300">
-              <p className="text-sm font-semibold text-blue-700">Étape 2</p>
-              <h3 className="font-bold mt-2">Explorez un cours</h3>
-              <p className="text-gray-600 mt-2">Ouvrez un cours, lisez le contenu, puis passez au quiz.</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 relative z-[1] hover:shadow-lg transition-shadow duration-300">
-              <p className="text-sm font-semibold text-blue-700">Étape 3</p>
-              <h3 className="font-bold mt-2">Passez le quiz</h3>
-              <p className="text-gray-600 mt-2">
-                Après la fin du cours (chapitres validés), le quiz se débloque : il faut au moins 2/3 de bonnes
-                réponses pour valider.
-              </p>
-            </div>
-          </div>
-        </section>
-      </SectionReveal>
-
-      {/* Nouvelle section — appel à l’action */}
-      <SectionReveal>
-        <section className="py-14 px-6 md:px-10">
-          <div className="max-w-6xl mx-auto rounded-2xl overflow-hidden shadow-xl border border-white/20 bg-gradient-to-r from-blue-700 via-blue-600 to-orange-500 text-white relative">
-            <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_50%,white,transparent_50%)] pointer-events-none" />
-            <div className="relative px-8 py-10 md:py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold knd-shimmer-text">Prêt à commencer ?</h2>
-                <p className="mt-2 text-blue-50 max-w-xl">
-                  Rejoignez la communauté, suivez vos cours au rythme qui vous convient et mesurez vos progrès avec
-                  les quiz.
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-                <button
-                  onClick={() => navigate("/inscription")}
-                  className="px-6 py-3 bg-white text-blue-700 font-semibold rounded-xl shadow hover:bg-blue-50 transition hover:scale-[1.02]"
-                >
-                  Créer un compte
-                </button>
-                <button
-                  onClick={() => navigate("/cours")}
-                  className="px-6 py-3 bg-white/15 border border-white/40 font-semibold rounded-xl hover:bg-white/25 transition"
-                >
-                  Parcourir les cours
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </SectionReveal>
-
-      <SectionReveal>
-        <section className="py-16 bg-white border-y border-gray-100">
+        <section className="py-16 bg-gray-100 dark:bg-slate-900/40 border-y border-gray-200 dark:border-white/5">
           <div className="max-w-6xl mx-auto px-6 md:px-10">
-            <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Questions fréquentes</h2>
-            <div className="max-w-3xl mx-auto space-y-4">
-              <details className="bg-gray-50 rounded-xl p-4 border border-gray-100 open:shadow-md transition-shadow">
-                <summary className="font-semibold cursor-pointer list-none flex items-center justify-between gap-2">
-                  Est-ce que je peux reprendre un cours ?
-                  <span className="text-orange-500 text-lg leading-none">+</span>
-                </summary>
-                <p className="text-gray-600 mt-2">
-                  Oui. Vous pouvez revoir le contenu et repasser le quiz pour améliorer votre progression.
-                </p>
-              </details>
-              <details className="bg-gray-50 rounded-xl p-4 border border-gray-100 open:shadow-md transition-shadow">
-                <summary className="font-semibold cursor-pointer list-none flex items-center justify-between gap-2">
-                  Quels sont les prérequis ?
-                  <span className="text-orange-500 text-lg leading-none">+</span>
-                </summary>
-                <p className="text-gray-600 mt-2">
-                  Les cours sont conçus pour démarrer facilement. Vous pouvez progresser cours après cours.
-                </p>
-              </details>
-              <details className="bg-gray-50 rounded-xl p-4 border border-gray-100 open:shadow-md transition-shadow">
-                <summary className="font-semibold cursor-pointer list-none flex items-center justify-between gap-2">
-                  Comment ma progression est-elle calculée ?
-                  <span className="text-orange-500 text-lg leading-none">+</span>
-                </summary>
-                <p className="text-gray-600 mt-2">
-                  Vous validez les chapitres au fil du parcours ; le quiz se débloque vers la fin du cours. Avec au
-                  moins deux tiers de bonnes réponses, votre progression est mise à jour.
-                </p>
-              </details>
+            <h3 className="text-3xl font-bold text-gray-900 dark:text-white text-center">Pourquoi choisir la plateforme</h3>
+            <div className="mt-10 grid md:grid-cols-4 gap-4">
+              {[
+                "Parcours guidé et lisible",
+                "Communauté par école",
+                "Challenges avec classement",
+                "Mode démo sans inscription",
+              ].map((r) => (
+                <div key={r} className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 text-gray-800 dark:text-slate-200 text-sm font-medium">
+                  {r}
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -339,63 +385,65 @@ export default function Acceuil(props: any) {
 
       <SectionReveal>
         <section className="py-16 max-w-6xl mx-auto px-6 md:px-10">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">Cours populaires</h2>
-              <p className="mt-2 text-gray-600">Découvrez une sélection de cours pour lancer votre apprentissage.</p>
-            </div>
-          </div>
-
-          <div className="mt-10 grid md:grid-cols-3 gap-6">
-            {coursPopulaires.map((cours: Cours, i) => (
-              <div
-                key={cours.id}
-                className="animate-knd-fade-up"
-                style={{ animationDelay: `${Math.min(i, 5) * 80}ms` }}
-              >
-                <CarteCours cours={cours} onVoirCours={(id: number) => navigate(`/cours/${id}`)} />
-              </div>
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white text-center">FAQ rapide</h3>
+          <div className="mt-10 grid md:grid-cols-2 gap-5">
+            {[
+              {
+                q: "Faut-il s'inscrire pour accéder à la communauté ?",
+                r: "Oui. L'inscription est requise pour la communauté, les challenges, les projets et les classements.",
+              },
+              {
+                q: "Puis-je tester la plateforme sans compte ?",
+                r: "Oui. Le mode démo permet d'explorer l'expérience complète en quelques minutes.",
+              },
+              {
+                q: "Mes notes sont-elles sauvegardées ?",
+                r: "Oui. Elles sont sauvegardées localement sur votre appareil pendant la navigation.",
+              },
+              {
+                q: "Comment fonctionne le like ?",
+                r: "Chaque étudiant peut liker une seule fois une leçon, un projet ou un formateur.",
+              },
+            ].map((f) => (
+              <article key={f.q} className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
+                <h4 className="font-bold text-gray-900 dark:text-white">{f.q}</h4>
+                <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">{f.r}</p>
+              </article>
             ))}
           </div>
-
-          <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={() => navigate("/cours")}
-              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-md hover:shadow-lg"
-            >
-              Voir tous les cours
-            </button>
-            <button
-              onClick={() => navigate("/connexion")}
-              className="px-6 py-3 bg-gray-100 text-gray-900 font-semibold rounded-xl hover:bg-gray-200 transition border border-gray-200"
-            >
-              Je me connecte
-            </button>
-          </div>
         </section>
       </SectionReveal>
 
-      {/* Nouvelle section — accroche finale */}
       <SectionReveal>
-        <section className="pb-16 max-w-6xl mx-auto px-6 md:px-10">
-          <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/60 px-8 py-10 text-center">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Une question sur un cours ?</h2>
-            <p className="mt-2 text-gray-600 max-w-lg mx-auto">
-              Explorez le catalogue, lisez les descriptions et lancez un parcours : la progression et les quiz vous
-              guident pas à pas.
+        <section className="pb-20 max-w-6xl mx-auto px-6 md:px-10">
+          <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-r from-orange-500/20 via-blue-600/20 to-indigo-600/20 p-10 text-center">
+            <h3 className="text-2xl md:text-3xl font-bold text-white">Prêt à rejoindre l’aventure ?</h3>
+            <p className="mt-3 text-slate-200 max-w-xl mx-auto">
+              Inscription avec choix d’école contrôlé, tableaux de bord épurés et navigation fluide sur mobile.
             </p>
-            <button
-              type="button"
-              onClick={() => navigate("/cours")}
-              className="mt-6 inline-flex items-center justify-center px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition hover:-translate-y-0.5 shadow"
-            >
-              Découvrir le catalogue
-            </button>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => navigate("/inscription")}
+                className="px-8 py-3 rounded-2xl bg-white text-slate-900 font-bold hover:bg-orange-400 hover:text-white transition"
+              >
+                Je m’inscris
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/connexion")}
+                className="px-8 py-3 rounded-2xl border border-white/40 text-white font-semibold hover:bg-white/10"
+              >
+                J’ai déjà un compte
+              </button>
+            </div>
           </div>
         </section>
       </SectionReveal>
 
-      <PiedPage />
+      <div className="[&_footer]:mt-0">
+        <PiedPage />
+      </div>
     </div>
   );
 }

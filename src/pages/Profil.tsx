@@ -23,37 +23,59 @@ export default function Profil(props: any) {
       .filter(Boolean) as Cours[];
   }, [etudiant]);
 
-  const moyenne =
-    etudiant.coursSuivis.length > 0
-      ? Math.round(
-          etudiant.coursSuivis.reduce((acc: number, cs: CoursSuivi) => acc + cs.progression, 0) /
-            etudiant.coursSuivis.length
-        )
-      : 0;
+  const moyenne = Math.round(
+    etudiant.coursSuivis.reduce((acc: number, cs: CoursSuivi) => acc + cs.progression, 0) / Math.max(1, listeCours.length)
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-50 dark:from-slate-900 dark:to-slate-950">
       <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
 
       <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
           <div className="flex-1">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Profil étudiant</h2>
-            <div className="mt-6 space-y-2 text-gray-700">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Profil étudiant</h2>
+            <div className="mt-6 space-y-2 text-gray-700 dark:text-slate-300">
               <p>
-                <span className="font-semibold text-gray-900">Nom :</span> {etudiant.nom}
+                <span className="font-semibold text-gray-900 dark:text-white">Nom :</span> {etudiant.nom}
               </p>
               <p>
-                <span className="font-semibold text-gray-900">Email :</span> {etudiant.email}
+                <span className="font-semibold text-gray-900 dark:text-white">Email :</span> {etudiant.email}
               </p>
+              <p>
+                <span className="font-semibold text-gray-900 dark:text-white">École :</span> {etudiant.ecoleCanonique}
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 dark:text-white">Niveau :</span> {etudiant.niveauEtude}
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 dark:text-white">Points :</span> {etudiant.points ?? 0}
+              </p>
+              <p>
+                <span className="font-semibold text-gray-900 dark:text-white">Streak :</span> 🔥 {etudiant.streak ?? 0} jours
+              </p>
+              <div className="pt-2">
+                <span className="font-semibold text-gray-900 dark:text-white">Badges :</span>{" "}
+                {(etudiant.badges ?? []).length ? (
+                  <span className="inline-flex flex-wrap gap-2 mt-1">
+                    {(etudiant.badges ?? []).map((b: string) => (
+                      <span key={b} className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 text-xs font-semibold">
+                        {b}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">Aucun pour le moment</span>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 w-full md:w-96">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 w-full md:w-96">
             <p className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Progression moyenne</p>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl font-bold text-blue-700 tabular-nums">{moyenne}%</span>
-              <span className="text-gray-500 text-sm">sur {etudiant.coursSuivis.length} cours</span>
+              <span className="text-gray-500 text-sm">sur {listeCours.length} cours</span>
             </div>
             <div className="mt-4">
               <BarreProgression progression={moyenne} />

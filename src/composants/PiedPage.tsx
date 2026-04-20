@@ -4,28 +4,26 @@ export default function PiedPage() {
   const navigate = useNavigate();
 
   return (
-    <footer className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 text-white mt-20 shadow-xl relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_20%,white,transparent_45%)]"
-        aria-hidden
-      />
+    <footer className="mt-20 border-t border-slate-800 bg-slate-950 text-slate-100 relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_10%,#3b82f6,transparent_40%)]" aria-hidden />
+      <div className="pointer-events-none absolute inset-0 opacity-15 bg-[radial-gradient(circle_at_80%_90%,#f97316,transparent_40%)]" aria-hidden />
 
-      <div className="max-w-6xl mx-auto px-6 py-10 grid md:grid-cols-3 gap-8 relative">
+      <div className="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-8 relative">
         <div>
-          <h2 className="text-2xl font-bold mb-2">Kaay Niou Diang</h2>
-          <p className="text-sm text-blue-50/90">
-            Plateforme d&apos;apprentissage en ligne pour développer vos compétences.
+          <h2 className="text-2xl font-bold mb-2 text-white">Kaay Niou Diang</h2>
+          <p className="text-sm text-slate-300">
+            Plateforme d&apos;apprentissage moderne : cours, communauté, challenges et classements.
           </p>
         </div>
 
         <div>
-          <h3 className="font-semibold mb-3">Liens</h3>
+          <h3 className="font-semibold mb-3 text-white">Navigation</h3>
           <ul className="space-y-2 text-sm">
             <li>
               <button
                 type="button"
                 onClick={() => navigate("/")}
-                className="hover:text-orange-300 transition-colors cursor-pointer text-left"
+                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
               >
                 Accueil
               </button>
@@ -34,7 +32,7 @@ export default function PiedPage() {
               <button
                 type="button"
                 onClick={() => navigate("/cours")}
-                className="hover:text-orange-300 transition-colors cursor-pointer text-left"
+                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
               >
                 Cours
               </button>
@@ -43,7 +41,7 @@ export default function PiedPage() {
               <button
                 type="button"
                 onClick={() => navigate("/connexion")}
-                className="hover:text-orange-300 transition-colors cursor-pointer text-left"
+                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
               >
                 Connexion
               </button>
@@ -51,32 +49,63 @@ export default function PiedPage() {
             <li>
               <button
                 type="button"
-                onClick={() => navigate("/a-propos")}
-                className="hover:text-orange-300 transition-colors cursor-pointer text-left"
+                onClick={() => navigate("/#a-propos")}
+                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
               >
-                A propos
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => navigate("/contact")}
-                className="hover:text-orange-300 transition-colors cursor-pointer text-left"
-              >
-                Contact
+                A propos (Accueil)
               </button>
             </li>
           </ul>
         </div>
 
         <div>
-          <h3 className="font-semibold mb-3">Contact</h3>
-          <p className="text-sm text-blue-50/90">contact@kaay_niou_diang.com</p>
+          <h3 className="font-semibold mb-3 text-white">Plateforme</h3>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <button
+                type="button"
+                onClick={() => navigate("/challenges")}
+                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
+              >
+                Challenges
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => navigate("/communaute")}
+                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
+              >
+                Communaute
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => navigate("/classements")}
+                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
+              >
+                Classements
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="font-semibold mb-3 text-white">Contact</h3>
+          <p className="text-sm text-slate-300">contact@kaaynioudiang.com</p>
+          <button
+            type="button"
+            onClick={() => navigate("/contact")}
+            className="mt-4 px-4 py-2 rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800 transition text-sm font-semibold"
+          >
+            Nous écrire
+          </button>
         </div>
       </div>
 
-      <div className="text-center py-4 bg-blue-900/50 text-sm text-blue-100/90 relative">
-        © {new Date().getFullYear()} Kaay Niou Diang
+      <div className="text-center py-4 bg-slate-900 text-sm text-slate-400 relative border-t border-slate-800">
+        © {new Date().getFullYear()} Kaay Niou Diang - Tous droits reserves
       </div>
     </footer>
   );

@@ -10,11 +10,14 @@ export default function ListeCours(props: any) {
   const navigate = useNavigate();
   const [recherche, setRecherche] = useState("");
   const [categorie, setCategorie] = useState("Toutes");
+  const [niveau, setNiveau] = useState("Tous");
 
   const categories = useMemo(
     () => ["Toutes", ...new Set(listeCours.map((c) => c.categorie))],
     []
   );
+
+  const niveaux = useMemo(() => ["Tous", ...new Set(listeCours.map((c) => c.niveau))], []);
 
   const coursFiltres = useMemo(() => {
     const coursAvecProgression = listeCours.map((cours) => {
@@ -28,25 +31,26 @@ export default function ListeCours(props: any) {
         cours.description.toLowerCase().includes(recherche.toLowerCase()) ||
         cours.instructeur.toLowerCase().includes(recherche.toLowerCase());
       const matchCategorie = categorie === "Toutes" || cours.categorie === categorie;
-      return matchRecherche && matchCategorie;
+      const matchNiveau = niveau === "Tous" || cours.niveau === niveau;
+      return matchRecherche && matchCategorie && matchNiveau;
     });
-  }, [recherche, categorie, etudiant]);
+  }, [recherche, categorie, niveau, etudiant]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
       <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
 
-      <section className="bg-white border-y border-gray-100">
+      <section className="bg-white dark:bg-slate-900 border-y border-gray-100 dark:border-slate-800">
         <div className="max-w-6xl mx-auto px-6 md:px-10 py-10">
-          <h1 className="text-3xl font-bold text-center text-gray-900">Cours</h1>
+          <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Cours</h1>
 
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-[1fr_260px_auto] gap-3 items-center">
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-[1fr_200px_200px] gap-3 items-center">
             <BarreRecherche valeur={recherche} onChange={setRecherche} />
 
             <select
               value={categorie}
               onChange={(e) => setCategorie(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
+              className="px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-300"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -55,12 +59,17 @@ export default function ListeCours(props: any) {
               ))}
             </select>
 
-            <button
-              type="button"
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold"
+            <select
+              value={niveau}
+              onChange={(e) => setNiveau(e.target.value)}
+              className="px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-300"
             >
-              Filtrer
-            </button>
+              {niveaux.map((n) => (
+                <option key={n} value={n}>
+                  {n === "Tous" ? "Niveau" : n}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="mt-3 text-right text-sm text-gray-500">

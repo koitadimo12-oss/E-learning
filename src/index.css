@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Animations globales — utilisées sur l’accueil et ailleurs */
 @keyframes knd-fade-up {
   from {
@@ -115,4 +117,83 @@
   .knd-shimmer-text {
     animation: none !important;
   }
+}
+
+@keyframes knd-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes knd-orbit {
+  from {
+    transform: rotate(0deg) translateX(120px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(120px) rotate(-360deg);
+  }
+}
+
+.knd-mesh-hero {
+  background: radial-gradient(ellipse 80% 60% at 20% 20%, rgb(59 130 246 / 0.35), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 80% 30%, rgb(249 115 22 / 0.28), transparent 50%),
+    radial-gradient(ellipse 60% 80% at 50% 100%, rgb(99 102 241 / 0.2), transparent 45%),
+    linear-gradient(165deg, #0f172a 0%, #1e293b 45%, #0c1222 100%);
+}
+
+.knd-animated-gradient {
+  background-size: 200% 200%;
+  animation: knd-gradient-shift 14s ease infinite;
+}
+
+.knd-glass {
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: 0 25px 80px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(16px);
+}
+
+.knd-orbit-dot {
+  animation: knd-orbit 18s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knd-animated-gradient,
+  .knd-orbit-dot {
+    animation: none !important;
+  }
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  color: rgb(241 245 249);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgb(148 163 184);
+}
+
+/* Renforce la lisibilite en mode sombre pour les classes utilitaires legacy */
+.dark .text-gray-900 {
+  color: rgb(248 250 252) !important;
+}
+.dark .text-gray-800 {
+  color: rgb(241 245 249) !important;
+}
+.dark .text-gray-700 {
+  color: rgb(226 232 240) !important;
+}
+.dark .text-gray-600 {
+  color: rgb(203 213 225) !important;
+}
+.dark .text-gray-500 {
+  color: rgb(148 163 184) !important;
 }

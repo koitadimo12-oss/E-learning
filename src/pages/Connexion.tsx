@@ -21,31 +21,11 @@ export default function Connexion(props: any) {
   const [profil, setProfil] = useState("Etudiant");
   const [resetError, setResetError] = useState("");
 
-  const validatePassword = (password: string) => {
-    const lettre = /[a-zA-Z]/.test(password);
-    const chiffre = /[0-9]/.test(password);
-    const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (password.length < 10 || password.length > 15) {
-      return "Le mot de passe doit contenir entre 10 et 15 caractères.";
-    }
-    if (!lettre || !chiffre || !special) {
-      return "Le mot de passe doit contenir lettres, chiffres et caractères spéciaux.";
-    }
-    return "";
-  };
-
   const handleSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault();
 
     if (!formData.email || !formData.password) {
       setError("Veuillez remplir tous les champs.");
-      return;
-    }
-
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) {
-      setError(passwordError);
       return;
     }
 
@@ -73,9 +53,9 @@ export default function Connexion(props: any) {
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-[#0a1b3a] px-3 py-6">
-      <div className="w-full max-w-[1200px] min-h-[700px] flex flex-col lg:flex-row rounded-2xl overflow-hidden shadow-2xl">
-        <div className="w-full lg:w-1/2 flex items-center justify-center bg-white p-6 sm:p-10">
+    <div className="min-h-screen flex justify-center items-center bg-[#0f172a] dark:bg-slate-950 px-3 py-6">
+      <div className="w-full max-w-[1100px] min-h-[680px] flex flex-col lg:flex-row rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+        <div className="w-full lg:w-1/2 flex items-center justify-center bg-white dark:bg-slate-900 p-6 sm:p-10">
           <div className="w-full max-w-[420px]">
             <div className="mb-4 flex justify-center">
               <img
@@ -88,8 +68,8 @@ export default function Connexion(props: any) {
               />
             </div>
 
-            <p className="text-sm text-gray-500">Bienvenue !!!</p>
-            <h1 className="text-3xl font-bold mb-6">Connexion</h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Bienvenue</p>
+            <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Connexion étudiant</h1>
 
             <form onSubmit={handleSubmit}>
               <ChampSaisie
@@ -113,8 +93,7 @@ export default function Connexion(props: any) {
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const next = e.target.value;
                     setFormData((prev) => ({ ...prev, password: next }));
-                    const passwordError = validatePassword(next);
-                    setError(passwordError ? passwordError : "");
+                    setError("");
                   }}
                 />
                 <span
@@ -129,7 +108,7 @@ export default function Connexion(props: any) {
               {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
 
               <div className="flex justify-between items-center text-sm mt-3">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
+                <label className="flex items-center gap-2 cursor-pointer select-none text-gray-700 dark:text-slate-300">
                   <input
                     type="checkbox"
                     name="remember"
@@ -160,21 +139,26 @@ export default function Connexion(props: any) {
                 Se connecter
               </button>
 
-              <div className="flex justify-center items-center text-sm text-gray-500 mt-4 gap-2">
-                <span>Pas encore de compte ?</span>
-                <Link to="/inscription" className="text-orange-500 font-semibold hover:underline">
-                  S’inscrire
+              <div className="flex flex-col items-center text-sm text-gray-500 dark:text-slate-400 mt-4 gap-2">
+                <div className="flex items-center gap-2">
+                  <span>Pas encore de compte ?</span>
+                  <Link to="/inscription" className="text-orange-500 font-semibold hover:underline">
+                    S’inscrire
+                  </Link>
+                </div>
+                <Link to="/connexion-formateur" className="text-blue-600 font-medium hover:underline">
+                  Espace formateur
                 </Link>
               </div>
             </form>
           </div>
         </div>
 
-        <div className="hidden lg:flex w-1/2 bg-[#f5e6db] items-center justify-center">
+        <div className="hidden lg:flex w-1/2 bg-[#f5e6db] dark:bg-slate-800 items-center justify-center">
           <img
             src="/Hero.png"
             alt="illustration"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             onError={(e: SyntheticEvent<HTMLImageElement>) => {
               e.currentTarget.style.display = "none";
             }}
@@ -184,15 +168,15 @@ export default function Connexion(props: any) {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-[380px]">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl w-[380px] border border-gray-200 dark:border-slate-700">
             <h3 className="text-lg font-semibold mb-3">Réinitialisation</h3>
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">Profil :</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Profil :</label>
             <select
               name="profil"
               value={profil}
               onChange={(e: ChangeEvent<HTMLSelectElement>) => setProfil(e.target.value)}
-              className="w-full p-2 border rounded mt-1 mb-3"
+              className="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 rounded mt-1 mb-3"
             >
               <option value="Etudiant">Étudiant</option>
               <option value="Personnel">Personnel</option>

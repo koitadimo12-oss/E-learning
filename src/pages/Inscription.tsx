@@ -1,10 +1,13 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import ChampSaisie from "../composants/ChampSaisie";
-import { inscriptionEtudiant } from "../services/etudiantService";
+import SelectEcole from "../composants/SelectEcole";
+import { listeEcoles } from "../services/ecoleService";
+import { inscriptionEtudiant, type NiveauEtude } from "../services/etudiantService";
+import type { EcoleEntry } from "../services/ecoleService";
 
 export default function Inscription(props: any) {
   const { setEtudiant } = props;
@@ -15,8 +18,9 @@ export default function Inscription(props: any) {
     email: "",
     password: "",
     confirmPassword: "",
-    profil: "Etudiant",
   });
+  const [ecole, setEcole] = useState<EcoleEntry>(() => listeEcoles()[0]);
+  const [niveauEtude, setNiveauEtude] = useState<NiveauEtude>("Université");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -28,7 +32,7 @@ export default function Inscription(props: any) {
     const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
     if (password.length < 10 || password.length > 15 || !lettre || !chiffre || !special) {
-      return "Mot de passe invalide";
+      return "Mot de passe invalide (10–15 caractères, lettres, chiffres et spécial)";
     }
     return "";
   };
@@ -36,7 +40,7 @@ export default function Inscription(props: any) {
   const handleSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault();
 
-    const { nom, prenom, email, password, confirmPassword, profil } = formData;
+    const { nom, prenom, email, password, confirmPassword } = formData;
     if (!nom || !prenom || !email || !password || !confirmPassword) {
       setError("Veuillez remplir tous les champs");
       return;
@@ -53,26 +57,17 @@ export default function Inscription(props: any) {
       return;
     }
 
-    if (profil !== "Etudiant") {
-      setError("Seuls les étudiants sont autorisés");
-      return;
-    }
-
-    const user = inscriptionEtudiant(
-      `${formData.nom} ${formData.prenom}`.trim(),
-      formData.email,
-      formData.password
-    );
+    const user = inscriptionEtudiant(`${nom} ${prenom}`.trim(), email, password, ecole.id, niveauEtude);
     setError("");
     setEtudiant(user);
     navigate("/profil");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-3 py-6">
-      <div className="w-full max-w-[1100px] min-h-[680px] rounded-2xl overflow-hidden shadow-2xl flex flex-col lg:flex-row">
-        <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-6">
-          <div className="w-full max-w-[340px]">
+    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] dark:bg-slate-950 px-3 py-6">
+      <div className="w-full max-w-[1100px] min-h-[680px] rounded-2xl overflow-hidden shadow-2xl flex flex-col lg:flex-row border border-white/10">
+        <div className="w-full lg:w-1/2 bg-white dark:bg-slate-900 flex items-center justify-center p-6">
+          <div className="w-full max-w-[380px]">
             <div className="flex justify-center mb-4">
               <img
                 src="/logo2.png"
@@ -84,21 +79,16 @@ export default function Inscription(props: any) {
               />
             </div>
 
-            <h2 className="text-xl font-bold text-center mb-1">Inscription</h2>
-            <p className="text-gray-500 text-sm text-center mb-4">Créer votre compte</p>
+            <h2 className="text-xl font-bold text-center mb-1 text-gray-900 dark:text-white">Inscription étudiant</h2>
+            <p className="text-gray-500 dark:text-slate-400 text-sm text-center mb-4">Kaay Niou Diang</p>
 
-            <form
-              className="space-y-2"
-              onSubmit={handleSubmit}
-            >
+            <form className="space-y-3" onSubmit={handleSubmit}>
               <ChampSaisie
                 label="Nom"
                 type="text"
                 name="nom"
                 value={formData.nom}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setFormData((prev) => ({ ...prev, nom: e.target.value }))
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData((prev) => ({ ...prev, nom: e.target.value }))}
               />
 
               <ChampSaisie
@@ -106,19 +96,30 @@ export default function Inscription(props: any) {
                 type="text"
                 name="prenom"
                 value={formData.prenom}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setFormData((prev) => ({ ...prev, prenom: e.target.value }))
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData((prev) => ({ ...prev, prenom: e.target.value }))}
               />
+
+              <SelectEcole valueId={ecole.id} onChange={setEcole} />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Niveau</label>
+                <select
+                  value={niveauEtude}
+                  onChange={(e) => setNiveauEtude(e.target.value as NiveauEtude)}
+                  className="w-full p-2.5 border border-gray-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                >
+                  <option value="Lycée">Lycée</option>
+                  <option value="Université">Université</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </div>
 
               <ChampSaisie
                 label="Email"
                 type="email"
                 name="email"
                 value={formData.email}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
               />
 
               <div className="relative">
@@ -128,8 +129,7 @@ export default function Inscription(props: any) {
                   name="password"
                   value={formData.password}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    const next = e.target.value;
-                    setFormData((prev) => ({ ...prev, password: next }));
+                    setFormData((prev) => ({ ...prev, password: e.target.value }));
                     setError("");
                   }}
                 />
@@ -162,31 +162,26 @@ export default function Inscription(props: any) {
                 </span>
               </div>
 
-              <select
-                name="profil"
-                value={formData.profil}
-                onChange={(e) => setFormData((prev) => ({ ...prev, profil: e.target.value }))}
-                className="w-full p-2 mt-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-              >
-                <option value="Etudiant">Étudiant</option>
-                <option value="Personnel">Personnel</option>
-                <option value="Tuteur">Tuteur</option>
-              </select>
-
               {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
 
               <button
                 type="submit"
-                onClick={() => {}}
-                className="w-full mt-6 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition text-center cursor-pointer"
+                className="w-full mt-4 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition text-center cursor-pointer"
               >
                 S’inscrire
               </button>
+
+              <p className="text-xs text-center text-gray-500 dark:text-slate-400 pt-2">
+                Formateur ?{" "}
+                <Link to="/inscription-formateur" className="text-blue-600 font-semibold hover:underline">
+                  Inscription formateur
+                </Link>
+              </p>
             </form>
           </div>
         </div>
 
-        <div className="hidden lg:flex w-1/2 bg-[#f5e6db] items-center justify-center">
+        <div className="hidden lg:flex w-1/2 bg-[#f5e6db] dark:bg-slate-800 items-center justify-center">
           <img
             src="/Hero.png"
             alt="illustration"

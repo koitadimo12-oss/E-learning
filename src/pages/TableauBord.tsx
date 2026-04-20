@@ -5,7 +5,7 @@ import { listeCours, type Cours } from "../services/coursService";
 import type { Etudiant } from "../services/etudiantService";
 
 type CoursSuivi = Etudiant["coursSuivis"][number];
-import BarreNavigation from "../composants/BarreNavigation";
+import EnteteRetour from "../composants/EnteteRetour";
 import BarreProgression from "../composants/BarreProgression";
 import PiedPage from "../composants/PiedPage";
 
@@ -100,13 +100,10 @@ export default function TableauBord(props: any) {
   }
 
   const totalCoursSuivis = etudiant.coursSuivis.length;
-  const moyenne =
-    totalCoursSuivis > 0
-      ? Math.round(
-          etudiant.coursSuivis.reduce((acc: number, cs: CoursSuivi) => acc + cs.progression, 0) /
-            totalCoursSuivis
-        )
-      : 0;
+  const totalCoursPlateforme = listeCours.length;
+  const moyenne = Math.round(
+    etudiant.coursSuivis.reduce((acc: number, cs: CoursSuivi) => acc + cs.progression, 0) / Math.max(1, totalCoursPlateforme)
+  );
 
   function ouvrirContenuCours(cours: Cours) {
     setCoursSelectionne(cours);
@@ -132,7 +129,7 @@ export default function TableauBord(props: any) {
             <p className="text-sm text-gray-500 font-semibold">Progression moyenne</p>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl font-bold text-blue-700">{moyenne}%</span>
-              <span className="text-gray-500">sur {totalCoursSuivis} cours</span>
+              <span className="text-gray-500">sur {totalCoursPlateforme} cours</span>
             </div>
             <div className="mt-4">
               <BarreProgression progression={moyenne} />
@@ -140,83 +137,77 @@ export default function TableauBord(props: any) {
           </button>
         </div>
 
-        <div className="mt-12 grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold mb-6">Progression des cours</h2>
-
-            {coursSuivis.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-6">
-                {coursSuivis.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => ouvrirContenuCours(c)}
-                    className="bg-white rounded-xl shadow p-6 text-left hover:shadow-lg transition"
-                  >
-                    <div className="flex items-center gap-4">
-                      <ImageOuBadge cours={c} />
-                      <div>
-                        <h3 className="font-bold">{c.titre}</h3>
-                        <p className="text-sm text-gray-500">{c.instructeur}</p>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <BarreProgression progression={c.progression ?? 0} />
-                    </div>
-                    <div className="mt-4 w-full bg-orange-500 text-white py-2 rounded-lg text-center font-semibold">
-                      Continuer
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow p-8">
-                <p className="text-gray-700 font-semibold">
-                  Vous n’avez encore suivi aucun cours. Lancez votre premier apprentissage !
-                </p>
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">Progression des cours</h2>
+          {coursSuivis.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-6">
+              {coursSuivis.map((c) => (
                 <button
-                  onClick={() => navigate("/cours")}
-                  className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+                  key={c.id}
+                  type="button"
+                  onClick={() => ouvrirContenuCours(c)}
+                  className="bg-white rounded-xl shadow p-6 text-left hover:shadow-lg transition"
                 >
-                  Explorer les cours
+                  <div className="flex items-center gap-4">
+                    <ImageOuBadge cours={c} />
+                    <div>
+                      <h3 className="font-bold">{c.titre}</h3>
+                      <p className="text-sm text-gray-500">{c.instructeur}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <BarreProgression progression={c.progression ?? 0} />
+                  </div>
+                  <div className="mt-4 w-full bg-orange-500 text-white py-2 rounded-lg text-center font-semibold">
+                    Continuer
+                  </div>
                 </button>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Recommandations</h2>
-            {recommendationsSansDoublon.length > 0 ? (
-              <div className="space-y-4">
-                {recommendationsSansDoublon.slice(0, 4).map(({ cours, progression }) => (
-                  <button
-                    key={cours.id}
-                    type="button"
-                    onClick={() => ouvrirContenuCours(cours)}
-                    className="bg-white rounded-xl shadow p-6 w-full text-left hover:shadow-lg transition"
-                  >
-                    <div className="flex items-center gap-4">
-                      <ImageOuBadge cours={cours} />
-                      <div>
-                        <h3 className="font-bold">{cours.titre}</h3>
-                        <p className="text-sm text-gray-500">{cours.instructeur}</p>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <BarreProgression progression={progression} />
-                    </div>
-                    <div className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg text-center font-semibold">
-                      Ouvrir le cours
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600 bg-white rounded-xl shadow p-6">
-                Rien à recommander pour le moment. Continuez comme ça !
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow p-8">
+              <p className="text-gray-700 font-semibold">
+                Vous n’avez encore suivi aucun cours. Lancez votre premier apprentissage !
               </p>
-            )}
-          </div>
+              <button
+                onClick={() => navigate("/cours")}
+                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Explorer les cours
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">Recommandations</h2>
+          {recommendationsSansDoublon.length > 0 ? (
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {recommendationsSansDoublon.slice(0, 6).map(({ cours, progression }) => (
+                <button
+                  key={cours.id}
+                  type="button"
+                  onClick={() => ouvrirContenuCours(cours)}
+                  className="bg-white rounded-xl shadow p-5 w-full text-left hover:shadow-lg transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <ImageOuBadge cours={cours} />
+                    <div>
+                      <h3 className="font-bold">{cours.titre}</h3>
+                      <p className="text-sm text-gray-500">{cours.instructeur}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <BarreProgression progression={progression} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600 bg-white rounded-xl shadow p-6">
+              Rien à recommander pour le moment. Continuez comme ça !
+            </p>
+          )}
         </div>
 
         <div className="mt-12">
@@ -483,12 +474,12 @@ export default function TableauBord(props: any) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-white">
-      <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-white dark:from-slate-900 dark:to-slate-950 text-gray-900 dark:text-slate-100">
+      <EnteteRetour to="/" label="Accueil" titre="Tableau de bord" sousTitre={etudiant.email} />
 
       <section className="max-w-7xl mx-auto px-6 md:px-10 py-12">
         <div className="grid lg:grid-cols-[280px_1fr] gap-8 items-start">
-          <aside className="bg-white rounded-2xl border border-gray-100 shadow p-5 sticky top-24">
+          <aside className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-700 shadow p-5 sticky top-16">
             <button
               type="button"
               onClick={() => setSectionActive("profil")}
@@ -549,9 +540,19 @@ export default function TableauBord(props: any) {
             <button
               type="button"
               onClick={() => navigate("/cours")}
-              className="mt-6 w-full bg-gray-900 text-white py-2 rounded-xl hover:bg-gray-800 transition font-semibold"
+              className="mt-6 w-full bg-gray-900 dark:bg-slate-800 text-white py-2 rounded-xl hover:bg-gray-800 dark:hover:bg-slate-700 transition font-semibold"
             >
               Aller au catalogue
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onDeconnexion();
+                navigate("/");
+              }}
+              className="mt-3 w-full border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-slate-200 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition font-semibold text-sm"
+            >
+              Déconnexion
             </button>
           </aside>
 
