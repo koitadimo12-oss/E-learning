@@ -1,6 +1,14 @@
 import { getLabelEcoleCanonique, resoudreEcoleId } from "./ecoleService";
 
-export type NiveauEtude = "Lycée" | "Université" | "Autre";
+export type NiveauEtude = "Débutant" | "Intermédiaire" | "Avancé";
+
+function normaliserNiveauEtude(value: unknown): NiveauEtude {
+  if (value === "Débutant" || value === "Intermédiaire" || value === "Avancé") return value;
+  if (value === "Lycée") return "Débutant";
+  if (value === "Université") return "Intermédiaire";
+  if (value === "Autre") return "Avancé";
+  return "Intermédiaire";
+}
 
 export interface Etudiant {
   id: number;
@@ -20,7 +28,6 @@ export interface Etudiant {
   badges: string[];
   streak: number;
   lastStreakDate?: string;
-  challengesGagnes: number;
 }
 
 const ETUDIANTS_KEY = "knd_etudiants";
@@ -44,13 +51,12 @@ function normaliserEtudiantBrut(e: unknown): Etudiant | null {
     motDePasse: o.motDePasse,
     ecoleId: resolu,
     ecoleCanonique: typeof o.ecoleCanonique === "string" ? o.ecoleCanonique : getLabelEcoleCanonique(resolu),
-    niveauEtude: (o.niveauEtude as NiveauEtude) ?? "Université",
+    niveauEtude: normaliserNiveauEtude(o.niveauEtude),
     coursSuivis: coursSuivis as Etudiant["coursSuivis"],
     points: typeof o.points === "number" ? o.points : 0,
     badges: Array.isArray(o.badges) ? (o.badges as string[]) : [],
     streak: typeof o.streak === "number" ? o.streak : 0,
     lastStreakDate: typeof o.lastStreakDate === "string" ? o.lastStreakDate : undefined,
-    challengesGagnes: typeof o.challengesGagnes === "number" ? o.challengesGagnes : 0,
   };
 }
 
@@ -62,7 +68,7 @@ const etudiantsParDefaut: Etudiant[] = [
     motDePasse: "123456",
     ecoleId: "unipro",
     ecoleCanonique: "UNIPRO",
-    niveauEtude: "Université",
+    niveauEtude: "Intermédiaire",
     coursSuivis: [
       { idCours: 1, progression: 60 },
       { idCours: 2, progression: 0 },
@@ -73,7 +79,6 @@ const etudiantsParDefaut: Etudiant[] = [
     badges: ["Premier pas"],
     streak: 3,
     lastStreakDate: new Date().toDateString(),
-    challengesGagnes: 0,
   },
 ];
 
@@ -132,7 +137,6 @@ export function inscriptionEtudiant(
     points: 0,
     badges: [],
     streak: 0,
-    challengesGagnes: 0,
   };
   etudiants.push(newEtudiant);
   sauvegarderEtudiants(etudiants);

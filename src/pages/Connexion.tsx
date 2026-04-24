@@ -37,7 +37,7 @@ export default function Connexion(props: any) {
 
     setError("");
     setEtudiant(user);
-    navigate("/profil");
+    navigate("/");
   };
 
   const handleReset = () => {
@@ -77,7 +77,7 @@ export default function Connexion(props: any) {
                 type="email"
                 name="email"
                 value={formData.email}
-                placeholder="adresse email institutionnel"
+                placeholder="adresse email"
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setFormData((prev) => ({ ...prev, email: e.target.value }))
                 }
@@ -184,7 +184,7 @@ export default function Connexion(props: any) {
             </select>
 
             <ChampSaisie
-              label="Email institutionnel"
+              label="Email"
               type="email"
               name="resetEmail"
               value={resetEmail}

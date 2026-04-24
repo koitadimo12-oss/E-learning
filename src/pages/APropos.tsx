@@ -35,7 +35,7 @@ export default function APropos(props: any) {
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-6">
               <h2 className="font-bold text-gray-900">Notre vision</h2>
               <p className="mt-2 text-sm text-gray-600">
-                Construire une communaute d&apos;apprenants autonomes, confiants et capables de creer de vrais projets.
+                Former des apprenants autonomes, confiants et capables de progresser durablement.
               </p>
             </div>
           </div>

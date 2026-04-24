@@ -11,9 +11,7 @@ export default function PiedPage() {
       <div className="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-8 relative">
         <div>
           <h2 className="text-2xl font-bold mb-2 text-white">Kaay Niou Diang</h2>
-          <p className="text-sm text-slate-300">
-            Plateforme d&apos;apprentissage moderne : cours, communauté, challenges et classements.
-          </p>
+          <p className="text-sm text-slate-300">Plateforme d&apos;apprentissage moderne : cours, progression et réussite.</p>
         </div>
 
         <div>
@@ -60,34 +58,10 @@ export default function PiedPage() {
 
         <div>
           <h3 className="font-semibold mb-3 text-white">Plateforme</h3>
-          <ul className="space-y-2 text-sm">
-            <li>
-              <button
-                type="button"
-                onClick={() => navigate("/challenges")}
-                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
-              >
-                Challenges
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => navigate("/communaute")}
-                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
-              >
-                Communaute
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => navigate("/classements")}
-                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
-              >
-                Classements
-              </button>
-            </li>
+          <ul className="space-y-2 text-sm text-slate-300">
+            <li>Parcours guidés</li>
+            <li>Suivi intelligent</li>
+            <li>Certificats</li>
           </ul>
         </div>
 

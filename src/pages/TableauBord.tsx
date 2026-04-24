@@ -24,8 +24,10 @@ function MenuButton(props: any) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left rounded-lg px-3 py-2 text-sm transition ${
-        active ? "bg-gray-100 font-semibold text-gray-900" : "text-gray-700 hover:bg-gray-50"
+      className={`w-full text-left rounded-xl px-3 py-2.5 text-sm transition ${
+        active
+          ? "bg-blue-600 text-white font-semibold shadow"
+          : "text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
       }`}
     >
       {label}
@@ -479,22 +481,22 @@ export default function TableauBord(props: any) {
 
       <section className="max-w-7xl mx-auto px-6 md:px-10 py-12">
         <div className="grid lg:grid-cols-[280px_1fr] gap-8 items-start">
-          <aside className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-700 shadow p-5 sticky top-16">
+          <aside className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-xl p-5 sticky top-16">
             <button
               type="button"
               onClick={() => setSectionActive("profil")}
-              className="w-full text-left p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition"
+              className="w-full text-left p-4 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
             >
-              <p className="font-bold text-gray-900">{etudiant.nom}</p>
-              <p className="text-sm text-gray-500">{etudiant.email}</p>
-              <p className="text-xs text-blue-700 mt-2 font-semibold">Voir mon profil etudiant</p>
+              <p className="font-bold text-gray-900 dark:text-white">{etudiant.nom}</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">{etudiant.email}</p>
+              <p className="text-xs text-blue-700 dark:text-blue-400 mt-2 font-semibold">Voir mon profil étudiant</p>
             </button>
 
             <div className="mt-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase">Favorites</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase">Navigation rapide</p>
               <div className="mt-2 space-y-2">
                 <MenuButton
-                  label="Overview"
+                  label="Aperçu"
                   onClick={() => setSectionActive("overview")}
                   active={sectionActive === "overview"}
                 />
@@ -507,7 +509,7 @@ export default function TableauBord(props: any) {
             </div>
 
             <div className="mt-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase">Pages</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase">Parcours</p>
               <div className="mt-2 space-y-2">
                 <MenuButton
                   label="Mes cours"

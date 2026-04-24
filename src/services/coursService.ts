@@ -54,8 +54,8 @@ function creerQuizParCours(theme: string, notion1: string, notion2: string): Qui
     },
     {
       question: `Pour progresser dans ${theme}, que faut-il faire ?`,
-      options: ["Pratiquer avec des mini-projets", "Tout éviter", "Ne jamais tester", "Sauter les chapitres"],
-      reponse: "Pratiquer avec des mini-projets",
+      options: ["Pratiquer avec des mini-exercices", "Tout éviter", "Ne jamais tester", "Sauter les chapitres"],
+      reponse: "Pratiquer avec des mini-exercices",
     },
     {
       question: `Quand corriger ses erreurs dans ${theme} ?`,
@@ -83,13 +83,13 @@ const quizStandard: Quiz[] = [
   },
   {
     question: "Que faire après une erreur ?",
-    options: ["Analyser et corriger", "Supprimer le projet", "Changer de langage", "Arrêter"],
+    options: ["Analyser et corriger", "Supprimer l'exercice", "Changer de langage", "Arrêter"],
     reponse: "Analyser et corriger",
   },
   {
     question: "Comment consolider l'apprentissage ?",
-    options: ["Faire un mini-projet", "Lire uniquement", "Copier-coller", "Sauter les révisions"],
-    reponse: "Faire un mini-projet",
+    options: ["Faire un mini-exercice", "Lire uniquement", "Copier-coller", "Sauter les révisions"],
+    reponse: "Faire un mini-exercice",
   },
 ];
 
@@ -131,7 +131,7 @@ export const listeCours: Cours[] = [
         titre: "Démarrer avec React",
         duree: "1h 10",
         videoYoutube: "https://www.youtube.com/embed/bMknfKXIFA8",
-        contenu: ["JSX et composants", "Props et structure", "Organisation du projet"],
+        contenu: ["JSX et composants", "Props et structure", "Organisation du code"],
       },
       {
         id: 2,
@@ -271,7 +271,7 @@ export const listeCours: Cours[] = [
   {
     id: 6,
     titre: "Git & GitHub pour Débutants",
-    description: "Versionnez votre code et collaborez facilement sur des projets.",
+    description: "Versionnez votre code et collaborez facilement sur vos travaux.",
     image: "",
     instructeur: "M. Sarr",
     categorie: "Programmation",

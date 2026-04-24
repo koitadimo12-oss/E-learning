@@ -5,9 +5,7 @@ import { deconnexionAdmin, estAdminConnecte } from "../services/adminService";
 import { listeFormateurs, setStatutFormateur as majStatutFormateur, type StatutFormateur } from "../services/formateurService";
 import { listeCours } from "../services/coursService";
 import { listeEtudiants } from "../services/etudiantService";
-import { challengeHebdo, formatCountdown, getChallengeStatus } from "../services/challengeService";
 import { getLabelEcoleCanonique, listeEcoles } from "../services/ecoleService";
-import { PROJETS_ETUDIANTS } from "../services/projetsEtudiantsService";
 import { listeTousCommentairesCours, supprimerCommentaireCours } from "../services/commentairesService";
 
 export default function DashboardAdmin() {
@@ -15,32 +13,20 @@ export default function DashboardAdmin() {
   if (!estAdminConnecte()) return <Navigate to="/admin" replace />;
 
   const [version, setVersion] = useState(0);
-  const [nowMs, setNowMs] = useState(Date.now());
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [gagnant, setGagnant] = useState<string | null>(null);
   const [newAliasBySchool, setNewAliasBySchool] = useState<Record<string, string>>({});
   const [hiddenCoursIds, setHiddenCoursIds] = useState<number[]>([]);
-  const [hiddenProjetIds, setHiddenProjetIds] = useState<string[]>([]);
   const formateurs = useMemo(() => listeFormateurs(), [version]);
   const etudiants = listeEtudiants();
-  const challengeActuel = challengeHebdo(etudiants.map((e) => e.ecoleId), nowMs);
-  const challengeStatus = getChallengeStatus(nowMs, challengeActuel.dateDebut, challengeActuel.dateFin);
-  const challengeMsLeft = Math.max(0, new Date(challengeActuel.dateFin).getTime() - nowMs);
   const [aliasesBySchool, setAliasesBySchool] = useState<Record<string, string[]>>(() =>
     Object.fromEntries(listeEcoles().map((e) => [e.id, [...e.alias]])),
   );
   const [commentaires, setCommentaires] = useState(() => listeTousCommentairesCours());
 
   useEffect(() => {
-    const t = setInterval(() => setNowMs(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [activeTab]);
 
-  const totalChallenges = Math.max(1, Math.floor((nowMs - new Date("2026-01-05T08:00:00.000Z").getTime()) / (7 * 24 * 3600 * 1000)));
   const formateursEnAttente = formateurs.filter((f) => f.statut === "en_attente");
   const formateursAcceptes = formateurs.filter((f) => f.statut === "accepte");
   const activiteRecente = etudiants.slice(0, 6).map((e) => `${e.nom} (${getLabelEcoleCanonique(e.ecoleId)})`);
@@ -56,11 +42,9 @@ export default function DashboardAdmin() {
 
   const notifications = [
     formateursEnAttente.length > 0 ? `🔔 Nouvelle demande formateur (${formateursEnAttente.length})` : null,
-    `🔔 Nouveau projet soumis (${Math.max(1, etudiants.length)})`,
-    challengeStatus === "finished" ? "🔔 Fin de challenge detectee" : "🔔 Challenge en cours",
+    `🔔 Nouvelle activité étudiante (${Math.max(1, etudiants.length)})`,
   ].filter(Boolean) as string[];
   const coursAdmin = listeCours.filter((c) => !hiddenCoursIds.includes(c.id));
-  const projetsAdmin = PROJETS_ETUDIANTS.filter((p) => !hiddenProjetIds.includes(p.id));
 
   const appliquerStatut = (id: number, s: StatutFormateur) => {
     majStatutFormateur(id, s);
@@ -83,7 +67,6 @@ export default function DashboardAdmin() {
     { id: "formateurs", label: "👨‍🏫 Formateurs" },
     { id: "etudiants", label: "👨‍🎓 Etudiants" },
     { id: "cours", label: "📚 Cours" },
-    { id: "challenges", label: "⚔️ Challenges" },
     { id: "classements", label: "🏆 Classements" },
     { id: "moderation", label: "🧹 Moderation" },
     { id: "ecoles", label: "🏫 Ecoles" },
@@ -139,8 +122,8 @@ export default function DashboardAdmin() {
                   <p className="text-3xl font-bold">{listeCours.length}</p>
                 </div>
                 <div className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-5">
-                  <p className="text-sm text-gray-500">⚔️ Challenges</p>
-                  <p className="text-3xl font-bold">{totalChallenges}</p>
+                  <p className="text-sm text-gray-500">🏫 Ecoles</p>
+                  <p className="text-3xl font-bold">{listeEcoles().length}</p>
                 </div>
               </div>
 
@@ -259,31 +242,6 @@ export default function DashboardAdmin() {
             </section>
           )}
 
-          {activeTab === "challenges" && (
-            <section className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-6 space-y-4">
-              <h2 className="text-lg font-bold">⚔️ Challenge en cours</h2>
-              <p className="font-semibold">{challengeActuel.titre}</p>
-              <p className="text-sm">Statut: <span className="font-semibold">{challengeStatus}</span></p>
-              <p className="text-sm">⏳ Temps restant: <span className="font-semibold">{formatCountdown(challengeMsLeft)}</span></p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {challengeActuel.ecolesIds.map((id) => (
-                  <div key={id} className="rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-                    <p className="font-semibold">{getLabelEcoleCanonique(id)}</p>
-                    <p className="text-sm text-gray-500">Score: {scoreParEcole[id] ?? 0} pts</p>
-                    <button type="button" className="mt-2 text-orange-600 font-semibold" onClick={() => setGagnant(id)}>
-                      🏆 Choisir gagnant
-                    </button>
-                  </div>
-                ))}
-              </div>
-              {gagnant && (
-                <p className="rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-4 py-2 text-sm font-semibold">
-                  Gagnant selectionne: {getLabelEcoleCanonique(gagnant)}
-                </p>
-              )}
-            </section>
-          )}
-
           {activeTab === "classements" && (
             <section className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-6">
               <h2 className="text-lg font-bold">🏆 Classements</h2>
@@ -326,21 +284,10 @@ export default function DashboardAdmin() {
                   </ul>
                 </div>
                 <div className="rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-                  <h3 className="font-semibold">Projets etudiants</h3>
-                  <ul className="mt-3 space-y-2 text-sm">
-                    {projetsAdmin.map((p) => (
-                      <li key={p.id} className="rounded-lg bg-gray-50 dark:bg-slate-800 px-3 py-2 flex justify-between gap-3">
-                        <span>{p.titre}</span>
-                        <button
-                          type="button"
-                          className="text-red-600 font-semibold"
-                          onClick={() => setHiddenProjetIds((prev) => (prev.includes(p.id) ? prev : [...prev, p.id]))}
-                        >
-                          Supprimer
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <h3 className="font-semibold">Statut système</h3>
+                  <p className="mt-3 text-sm text-gray-600 dark:text-slate-400">
+                    La modération est centrée sur les commentaires et le contenu de cours.
+                  </p>
                 </div>
               </div>
             </section>
@@ -375,7 +322,7 @@ export default function DashboardAdmin() {
             <section className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-6">
               <h2 className="text-lg font-bold">⚙️ Parametres admin</h2>
               <p className="mt-2 text-sm text-gray-600 dark:text-slate-400">
-                Configuration des notifications, moderation auto et cadence des challenges (demo UI).
+                Configuration des notifications et des paramètres de modération (demo UI).
               </p>
             </section>
           )}

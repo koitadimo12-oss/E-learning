@@ -10,7 +10,7 @@ import { listeCours } from "../services/coursService";
 import type { Cours } from "../services/coursService";
 import { useCountUp } from "../hooks/useCountUp";
 import { useInViewOnce } from "../hooks/useInViewOnce";
-import { getDernierCoursId, getNotificationsDemo, getObjectifDuJour } from "../services/stockageLocal";
+import { getDernierCoursId, getObjectifDuJour } from "../services/stockageLocal";
 import { toucherStreak } from "../services/etudiantService";
 import type { Etudiant } from "../services/etudiantService";
 
@@ -26,7 +26,6 @@ export default function Acceuil(props: Props) {
   const dernierId = getDernierCoursId();
   const dernierCours = dernierId ? listeCours.find((c) => c.id === dernierId) : undefined;
   const objectif = getObjectifDuJour();
-  const notifs = getNotificationsDemo();
 
   const { ref: heroStatsRef, visible: heroStatsVisible } = useInViewOnce();
   const countCours = useCountUp(listeCours.length, 1600, heroStatsVisible);
@@ -44,8 +43,8 @@ export default function Acceuil(props: Props) {
 
   const temoignages = [
     { nom: "Awa", texte: "Les cours sont clairs et bien structurés. J’ai progressé rapidement." },
-    { nom: "Mamadou", texte: "Quiz utiles et communauté par école : ça change tout." },
-    { nom: "Fatou", texte: "Les challenges entre écoles motivent vraiment à aller au bout des projets." },
+    { nom: "Mamadou", texte: "Quiz utiles et progression claire : ça change tout." },
+    { nom: "Fatou", texte: "Les cours sont pratiques et motivants du début à la fin." },
   ];
 
   return (
@@ -69,14 +68,14 @@ export default function Acceuil(props: Props) {
                 Kaay Niou Diang
               </p>
               <h2 className="mt-5 text-4xl sm:text-5xl md:text-6xl font-black leading-[1.05] tracking-tight">
-                Apprenez sans friction.
+                {etudiant ? `Bon retour ${etudiant.nom.split(" ")[0]}.` : "Apprenez efficacement."}
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-white to-blue-200">
-                  Progressez avec votre école.
+                  {etudiant ? `Cap sur le niveau ${etudiant.niveauEtude}.` : "Montez de niveau chaque semaine."}
                 </span>
               </h2>
               <p className="mt-6 text-lg text-blue-100/90 max-w-xl leading-relaxed">
-                Cours YouTube, quiz intelligents, favoris & notes locales, communauté par établissement et compétitions
-                inter-écoles — une expérience pensée pour la vie réelle des étudiants.
+                Cours YouTube, quiz intelligents, favoris & notes locales — une expérience pensée pour la vie réelle des
+                étudiants.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
                 <button
@@ -85,13 +84,6 @@ export default function Acceuil(props: Props) {
                   className="px-8 py-4 rounded-2xl bg-orange-500 hover:bg-orange-400 text-white font-bold shadow-lg shadow-orange-500/25 transition hover:-translate-y-0.5"
                 >
                   Explorer les cours
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/demo")}
-                  className="px-8 py-4 rounded-2xl border border-blue-300/40 text-blue-100 font-semibold hover:bg-white/10 transition"
-                >
-                  Mode démo
                 </button>
                 <button
                   type="button"
@@ -105,8 +97,8 @@ export default function Acceuil(props: Props) {
               <div ref={heroStatsRef} className="mt-12 grid grid-cols-3 gap-3 sm:gap-4 max-w-lg">
                 {[
                   { label: "Cours", val: `${countCours}+` },
-                  { label: "Écoles", val: "6+" },
-                  { label: "Streak max", val: "∞" },
+                  { label: "Étudiants actifs", val: "2K+" },
+                  { label: "Satisfaction", val: "98%" },
                 ].map((s) => (
                   <div key={s.label} className="knd-glass rounded-2xl px-3 py-4 text-center">
                     <p className="text-2xl sm:text-3xl font-black tabular-nums">{s.val}</p>
@@ -120,7 +112,7 @@ export default function Acceuil(props: Props) {
               <div className="knd-glass rounded-3xl p-6 md:p-8 space-y-5">
                 <p className="text-sm font-bold text-orange-200 uppercase tracking-widest">Aperçu plateforme</p>
                 <div className="grid grid-cols-2 gap-3">
-                  {["Cours & quiz", "Challenges", "Communauté", "Classements"].map((t) => (
+                  {["Cours & quiz", "Progression", "Tableau de bord", "Certificats"].map((t) => (
                     <div
                       key={t}
                       className="rounded-2xl bg-white/5 border border-white/10 px-4 py-5 text-sm font-semibold hover:bg-white/10 transition cursor-default"
@@ -145,36 +137,12 @@ export default function Acceuil(props: Props) {
         </div>
       </section>
 
-      {/* Bandeau notifications démo */}
-      {etudiant && (
-        <div className="bg-slate-900/95 border-y border-white/5">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <p className="text-sm text-slate-300">
-              <span className="font-semibold text-white">Notifications</span> — {notifs.filter((n) => !n.lu).length} non lues
-              (démo)
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {notifs.slice(0, 2).map((n) => (
-                <span
-                  key={n.id}
-                  className="text-xs px-3 py-1 rounded-full bg-blue-500/15 text-blue-200 border border-blue-500/20"
-                >
-                  {n.titre}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Bloc étudiant connecté */}
       {etudiant && (
         <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-white/5">
           <div className="max-w-6xl mx-auto px-6 md:px-10 py-14">
             <h3 className="text-2xl md:text-3xl font-bold text-white">Votre accueil étudiant</h3>
-            <p className="text-slate-400 mt-2">
-              {etudiant.ecoleCanonique} · {etudiant.niveauEtude}
-            </p>
+            <p className="text-slate-400 mt-2">Niveau actuel : {etudiant.niveauEtude}</p>
             <div className="mt-8 grid md:grid-cols-3 gap-6">
               <div className="rounded-2xl bg-slate-800/80 border border-white/10 p-6">
                 <p className="text-xs font-bold uppercase tracking-widest text-orange-300">Streak</p>
@@ -219,17 +187,10 @@ export default function Acceuil(props: Props) {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/challenges")}
+                onClick={() => navigate("/profil")}
                 className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5"
               >
-                ⚔️ Challenges
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/classements")}
-                className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5"
-              >
-                🏆 Classements
+                👤 Mon profil
               </button>
             </div>
           </div>
@@ -241,25 +202,25 @@ export default function Acceuil(props: Props) {
         <section className="py-20 bg-white dark:bg-slate-950">
           <div className="max-w-6xl mx-auto px-6 md:px-10">
             <h3 className="text-3xl md:text-4xl font-bold text-center text-gray-900 dark:text-white">Une plateforme complète</h3>
-            <p className="text-center text-gray-600 dark:text-slate-400 mt-3 max-w-2xl mx-auto">
-              Normalisation des écoles (alias), gamification, projets étudiants et compétition — sans sacrifier la clarté.
+            <p className="text-center text-gray-600 dark:text-slate-300 mt-3 max-w-2xl mx-auto">
+              Une expérience e-learning fluide, lisible et motivante avec des parcours pratiques.
             </p>
             <div className="mt-12 grid md:grid-cols-3 gap-5">
               {[
                 {
-                  t: "Écoles unifiées",
-                  d: "Liste contrôlée + autocomplete. UNIPRO = univers professionnel : tout est normalisé.",
-                  c: "from-blue-600/40 to-indigo-600/30",
-                },
-                {
                   t: "Parcours cours",
-                  d: "YouTube intégré, playlist, progression auto, quiz 2/3 pour valider.",
-                  c: "from-orange-500/40 to-rose-600/30",
+                  d: "YouTube intégré, playlist, progression auto et quiz pour valider chaque module.",
+                  c: "from-blue-700 to-indigo-700",
                 },
                 {
-                  t: "Réseau & défis",
-                  d: "Communauté par école, chat simulé, challenges inter-écoles et classements.",
-                  c: "from-emerald-500/35 to-teal-600/25",
+                  t: "Suivi intelligent",
+                  d: "Objectifs quotidiens, reprise rapide du dernier cours et indicateurs utiles.",
+                  c: "from-orange-600 to-rose-700",
+                },
+                {
+                  t: "Expérience immersive",
+                  d: "Interface premium claire en mode clair et confortable en mode sombre.",
+                  c: "from-emerald-600 to-teal-700",
                 },
               ].map((b) => (
                 <div
@@ -267,7 +228,7 @@ export default function Acceuil(props: Props) {
                   className={`rounded-3xl p-8 bg-gradient-to-br ${b.c} border border-white/10 text-white shadow-xl`}
                 >
                   <h4 className="text-xl font-bold">{b.t}</h4>
-                  <p className="mt-3 text-sm text-white/85 leading-relaxed">{b.d}</p>
+                  <p className="mt-3 text-sm text-white leading-relaxed">{b.d}</p>
                 </div>
               ))}
             </div>
@@ -321,7 +282,7 @@ export default function Acceuil(props: Props) {
             <h3 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Témoignages</h3>
             <div className="mt-10 grid md:grid-cols-3 gap-6">
               {temoignages.map((t) => (
-                <div key={t.nom} className="[&_p]:text-gray-700 dark:[&_p]:text-slate-200 [&_h3]:text-gray-900 dark:[&_h3]:text-white">
+                <div key={t.nom} className="[&_p]:text-gray-800 dark:[&_p]:text-slate-100 [&_h3]:text-gray-900 dark:[&_h3]:text-white">
                   <CarteTemoignage nom={t.nom} texte={t.texte} />
                 </div>
               ))}
@@ -332,11 +293,11 @@ export default function Acceuil(props: Props) {
 
       <SectionReveal>
         <section id="a-propos" className="py-16 max-w-6xl mx-auto px-6 md:px-10">
-          <div className="knd-glass rounded-3xl p-8 md:p-12 text-white">
+          <div className="rounded-3xl p-8 md:p-12 border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xl">
             <h3 className="text-3xl md:text-4xl font-bold">À propos de Kaay Niou Diang</h3>
-            <p className="mt-4 text-blue-100/90 leading-relaxed">
+            <p className="mt-4 text-slate-700 dark:text-slate-200 leading-relaxed">
               Kaay Niou Diang est une plateforme d&apos;apprentissage en ligne qui aide les étudiants à apprendre à leur
-              rythme avec des cours clairs, des quiz utiles, une communauté active et des challenges motivants.
+              rythme avec des cours clairs, des quiz utiles et une progression motivante.
             </p>
             <div className="mt-8 grid md:grid-cols-3 gap-4">
               {[
@@ -350,12 +311,12 @@ export default function Acceuil(props: Props) {
                 },
                 {
                   titre: "Notre vision",
-                  texte: "Construire une communauté d'apprenants autonomes capables de créer de vrais projets.",
+                  texte: "Construire une génération d'apprenants autonomes capables d'évoluer en continu.",
                 },
               ].map((item) => (
-                <div key={item.titre} className="rounded-2xl bg-white/5 border border-white/10 p-5">
-                  <h4 className="font-bold text-white">{item.titre}</h4>
-                  <p className="mt-2 text-sm text-blue-100/90">{item.texte}</p>
+                <div key={item.titre} className="rounded-2xl bg-slate-50 border border-slate-200 p-5 dark:bg-slate-800 dark:border-slate-700">
+                  <h4 className="font-bold text-slate-900 dark:text-white">{item.titre}</h4>
+                  <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{item.texte}</p>
                 </div>
               ))}
             </div>
@@ -370,9 +331,9 @@ export default function Acceuil(props: Props) {
             <div className="mt-10 grid md:grid-cols-4 gap-4">
               {[
                 "Parcours guidé et lisible",
-                "Communauté par école",
-                "Challenges avec classement",
-                "Mode démo sans inscription",
+                "Suivi personnalisé",
+                "Reprise rapide du dernier cours",
+                "Certificats et montée en compétences",
               ].map((r) => (
                 <div key={r} className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 text-gray-800 dark:text-slate-200 text-sm font-medium">
                   {r}
@@ -389,12 +350,12 @@ export default function Acceuil(props: Props) {
           <div className="mt-10 grid md:grid-cols-2 gap-5">
             {[
               {
-                q: "Faut-il s'inscrire pour accéder à la communauté ?",
-                r: "Oui. L'inscription est requise pour la communauté, les challenges, les projets et les classements.",
+                q: "Faut-il s'inscrire pour suivre ses cours ?",
+                r: "Oui. L'inscription permet de sauvegarder vos progrès, vos favoris et votre parcours.",
               },
               {
-                q: "Puis-je tester la plateforme sans compte ?",
-                r: "Oui. Le mode démo permet d'explorer l'expérience complète en quelques minutes.",
+                q: "Comment reprendre là où j’ai arrêté ?",
+                r: "Votre dernier cours est conservé pour reprendre rapidement depuis l’accueil et le tableau de bord.",
               },
               {
                 q: "Mes notes sont-elles sauvegardées ?",
@@ -402,7 +363,7 @@ export default function Acceuil(props: Props) {
               },
               {
                 q: "Comment fonctionne le like ?",
-                r: "Chaque étudiant peut liker une seule fois une leçon, un projet ou un formateur.",
+                r: "Chaque étudiant peut liker une seule fois une leçon ou un formateur.",
               },
             ].map((f) => (
               <article key={f.q} className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
@@ -416,10 +377,10 @@ export default function Acceuil(props: Props) {
 
       <SectionReveal>
         <section className="pb-20 max-w-6xl mx-auto px-6 md:px-10">
-          <div className="rounded-3xl border border-orange-500/30 bg-gradient-to-r from-orange-500/20 via-blue-600/20 to-indigo-600/20 p-10 text-center">
-            <h3 className="text-2xl md:text-3xl font-bold text-white">Prêt à rejoindre l’aventure ?</h3>
-            <p className="mt-3 text-slate-200 max-w-xl mx-auto">
-              Inscription avec choix d’école contrôlé, tableaux de bord épurés et navigation fluide sur mobile.
+          <div className="rounded-3xl border border-orange-300/60 dark:border-orange-500/30 bg-gradient-to-r from-orange-100 via-blue-100 to-indigo-100 dark:from-orange-500/20 dark:via-blue-600/20 dark:to-indigo-600/20 p-10 text-center shadow-xl">
+            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Prêt à rejoindre l’aventure ?</h3>
+            <p className="mt-3 text-slate-700 dark:text-slate-200 max-w-xl mx-auto">
+              Inscription rapide, tableaux de bord épurés et navigation fluide sur mobile.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <button
@@ -432,11 +393,31 @@ export default function Acceuil(props: Props) {
               <button
                 type="button"
                 onClick={() => navigate("/connexion")}
-                className="px-8 py-3 rounded-2xl border border-white/40 text-white font-semibold hover:bg-white/10"
+                className="px-8 py-3 rounded-2xl border border-slate-400/60 dark:border-white/40 text-slate-900 dark:text-white font-semibold hover:bg-white/50 dark:hover:bg-white/10"
               >
                 J’ai déjà un compte
               </button>
             </div>
+          </div>
+        </section>
+      </SectionReveal>
+
+      <SectionReveal>
+        <section className="pb-20 max-w-6xl mx-auto px-6 md:px-10">
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { title: "Parcours guidés", text: "Des étapes courtes pour apprendre plus vite, sans surcharge." },
+              { title: "Pratique orientée projet", text: "Chaque cours vous rapproche d’un vrai résultat concret." },
+              { title: "Design premium", text: "Animations légères et lisibilité renforcée en clair/sombre." },
+            ].map((item) => (
+              <article
+                key={item.title}
+                className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-md hover:-translate-y-1 transition"
+              >
+                <h4 className="font-bold text-slate-900 dark:text-white">{item.title}</h4>
+                <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{item.text}</p>
+              </article>
+            ))}
           </div>
         </section>
       </SectionReveal>

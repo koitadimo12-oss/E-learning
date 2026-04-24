@@ -4,10 +4,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 
 import ChampSaisie from "../composants/ChampSaisie";
-import SelectEcole from "../composants/SelectEcole";
-import { listeEcoles } from "../services/ecoleService";
 import { inscriptionEtudiant, type NiveauEtude } from "../services/etudiantService";
-import type { EcoleEntry } from "../services/ecoleService";
 
 export default function Inscription(props: any) {
   const { setEtudiant } = props;
@@ -19,8 +16,7 @@ export default function Inscription(props: any) {
     password: "",
     confirmPassword: "",
   });
-  const [ecole, setEcole] = useState<EcoleEntry>(() => listeEcoles()[0]);
-  const [niveauEtude, setNiveauEtude] = useState<NiveauEtude>("Université");
+  const [niveauEtude, setNiveauEtude] = useState<NiveauEtude>("Intermédiaire");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -57,7 +53,7 @@ export default function Inscription(props: any) {
       return;
     }
 
-    const user = inscriptionEtudiant(`${nom} ${prenom}`.trim(), email, password, ecole.id, niveauEtude);
+    const user = inscriptionEtudiant(`${nom} ${prenom}`.trim(), email, password, "unipro", niveauEtude);
     setError("");
     setEtudiant(user);
     navigate("/profil");
@@ -99,8 +95,6 @@ export default function Inscription(props: any) {
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData((prev) => ({ ...prev, prenom: e.target.value }))}
               />
 
-              <SelectEcole valueId={ecole.id} onChange={setEcole} />
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Niveau</label>
                 <select
@@ -108,9 +102,9 @@ export default function Inscription(props: any) {
                   onChange={(e) => setNiveauEtude(e.target.value as NiveauEtude)}
                   className="w-full p-2.5 border border-gray-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
                 >
-                  <option value="Lycée">Lycée</option>
-                  <option value="Université">Université</option>
-                  <option value="Autre">Autre</option>
+                  <option value="Débutant">Débutant</option>
+                  <option value="Intermédiaire">Intermédiaire</option>
+                  <option value="Avancé">Avancé</option>
                 </select>
               </div>
 

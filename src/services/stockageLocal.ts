@@ -58,7 +58,7 @@ export function getObjectifDuJour(): string {
   const defauts = [
     "Regarder une leçon et noter 3 idées clés",
     "Valider un chapitre et faire 5 questions du quiz",
-    "Partager un projet avec votre école sur la communauté",
+    "Revoir vos notes locales pour mieux mémoriser",
   ];
   const key = `${PREFIX}objectif_jour_${new Date().toDateString()}`;
   try {
@@ -92,8 +92,8 @@ export function getNotificationsDemo(): NotificationItem[] {
     },
     {
       id: "n2",
-      titre: "Challenge inter-écoles",
-      message: "La phase de soumission se termine bientôt — consultez l'espace Challenge.",
+      titre: "Objectif du jour",
+      message: "Poursuivez votre progression pour consolider vos acquis.",
       lu: false,
       date: new Date().toISOString(),
     },
@@ -115,7 +115,7 @@ export function setThemePref(t: "light" | "dark") {
   localStorage.setItem(`${PREFIX}theme`, t);
 }
 
-type TypeLike = "projet" | "cours" | "formateur";
+type TypeLike = "cours" | "formateur";
 
 function keyLike(type: TypeLike, targetId: string | number) {
   return `${PREFIX}likes_${type}_${String(targetId)}`;

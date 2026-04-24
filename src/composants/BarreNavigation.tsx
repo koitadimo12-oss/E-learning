@@ -57,9 +57,7 @@ export default function BarreNavigation(props: Props) {
             <h1 className="font-bold text-lg sm:text-2xl bg-gradient-to-r from-blue-600 to-orange-500 dark:from-blue-400 dark:to-orange-400 bg-clip-text text-transparent">
               Kaay Niou Diang
             </h1>
-            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-slate-400 font-medium tracking-wide">
-              Cours · Communauté · Challenges
-            </p>
+            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-slate-400 font-medium tracking-wide">Cours · Progression</p>
           </div>
         </div>
 
@@ -70,18 +68,6 @@ export default function BarreNavigation(props: Props) {
             </li>
             <li className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" onClick={() => navigate("/cours")}>
               Cours
-            </li>
-            <li className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" onClick={() => navigate("/challenges")}>
-              Challenges
-            </li>
-            <li className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" onClick={() => navigate("/communaute")}>
-              Communauté
-            </li>
-            <li className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" onClick={() => navigate("/projets-etudiants")}>
-              Projets
-            </li>
-            <li className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" onClick={() => navigate("/classements")}>
-              Classements
             </li>
             <li
               className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"

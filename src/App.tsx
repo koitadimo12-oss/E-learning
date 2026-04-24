@@ -10,11 +10,6 @@ import Inscription from "./pages/Inscription";
 import Profil from "./pages/Profil";
 import TableauBord from "./pages/TableauBord";
 import Contact from "./pages/Contact";
-import Challenges from "./pages/Challenges";
-import Communaute from "./pages/Communaute";
-import ProjetsEtudiants from "./pages/ProjetsEtudiants";
-import Classements from "./pages/Classements";
-import ModeDemo from "./pages/ModeDemo";
 import ConnexionFormateur from "./pages/ConnexionFormateur";
 import InscriptionFormateur from "./pages/InscriptionFormateur";
 import DashboardFormateur from "./pages/DashboardFormateur";
@@ -53,7 +48,6 @@ export default function App(_props: any) {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Accueil {...shell} />} />
-        <Route path="/demo" element={<ModeDemo {...shell} />} />
 
         <Route path="/cours" element={<ListeCours {...shell} />} />
 
@@ -85,10 +79,6 @@ export default function App(_props: any) {
           }
         />
 
-        <Route path="/challenges" element={etudiant ? <Challenges {...shell} /> : <Navigate to="/connexion" replace />} />
-        <Route path="/communaute" element={etudiant ? <Communaute {...shell} /> : <Navigate to="/connexion" replace />} />
-        <Route path="/projets-etudiants" element={etudiant ? <ProjetsEtudiants {...shell} /> : <Navigate to="/connexion" replace />} />
-        <Route path="/classements" element={etudiant ? <Classements {...shell} /> : <Navigate to="/connexion" replace />} />
         <Route path="/favoris" element={<Favoris {...shell} />} />
 
         <Route path="/connexion-formateur" element={<ConnexionFormateur />} />

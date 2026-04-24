@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
@@ -19,17 +19,9 @@ const ecolesDemo = [
   { id: "ucad", label: "UCAD", points: 900, etudiants: 14 },
 ];
 
-const projetsDemo = [
-  { id: "p1", titre: "Gestion école Python", auteur: "Ali", ecole: "UNIPRO", likes: 45 },
-  { id: "p2", titre: "App stock JS", auteur: "Awa", ecole: "ENSUP", likes: 33 },
-  { id: "p3", titre: "Mini LMS", auteur: "Moussa", ecole: "UCAD", likes: 29 },
-];
-
 export default function ModeDemo(props: Props) {
   const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
-  const [likes, setLikes] = useState<Record<string, number>>({});
-  const [joins, setJoins] = useState(0);
   const [coursEtudiants, setCoursEtudiants] = useState([
     {
       id: "c1",
@@ -57,11 +49,6 @@ export default function ModeDemo(props: Props) {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [localVideoName, setLocalVideoName] = useState("");
 
-  const projets = useMemo(
-    () => projetsDemo.map((p) => ({ ...p, likes: p.likes + (likes[p.id] ?? 0) })),
-    [likes]
-  );
-  const topProjet = [...projets].sort((a, b) => b.likes - a.likes)[0];
   const topEtudiant = [...etudiantsDemo].sort((a, b) => b.points - a.points)[0];
   const topEcole = [...ecolesDemo].sort((a, b) => b.points - a.points)[0];
   const topProf = [...listeFormateurs()]
@@ -76,7 +63,7 @@ export default function ModeDemo(props: Props) {
           <p className="text-xs font-bold tracking-widest uppercase text-blue-100">MODE DEMO - KAAY NIOU DIANG</p>
           <h1 className="text-3xl md:text-4xl font-black mt-2">Bienvenue dans Kaay Niou Diang (Demo)</h1>
           <p className="mt-3 text-blue-100 max-w-3xl">
-            Explorez une version simulée complete avec etudiants, ecoles, cours, challenges, projets et classements.
+            Explorez une version simulée complète avec étudiants, écoles, cours et classements.
           </p>
           <button
             type="button"
@@ -90,8 +77,8 @@ export default function ModeDemo(props: Props) {
         <div className="grid md:grid-cols-4 gap-4">
           <Stat label="Etudiants actifs" valeur="146" />
           <Stat label="Ecoles" valeur="6" />
-          <Stat label="Challenges en cours" valeur="1" />
-          <Stat label="Top projets" valeur="12" />
+          <Stat label="Cours disponibles" valeur={String(coursEtudiants.length)} />
+          <Stat label="Classements" valeur="3" />
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -109,9 +96,9 @@ export default function ModeDemo(props: Props) {
               {topProf ? `${Math.round(scoreClassementFormateur(topProf))} pts` : "Pas encore de score"}
             </p>
           </Card>
-          <Card titre="Top projet">
-            <p className="font-bold">{topProjet.titre}</p>
-            <p className="text-sm text-gray-600 dark:text-slate-300">{topProjet.likes} likes</p>
+          <Card titre="Progression">
+            <p className="font-bold">Parcours actifs</p>
+            <p className="text-sm text-gray-600 dark:text-slate-300">{coursEtudiants.length} cours publiés en démo</p>
           </Card>
         </div>
 
@@ -131,37 +118,6 @@ export default function ModeDemo(props: Props) {
             ))}
           </Card>
         </div>
-
-        <Card titre="Challenges (demo)">
-          <p className="text-sm">UNIPRO vs ENSUP - Projet: App Python gestion stock - Statut: En cours</p>
-          <p className="text-sm mt-2">Participants: UNIPRO 6 | ENSUP 6</p>
-          <button
-            type="button"
-            onClick={() => setJoins((v) => v + 1)}
-            className="mt-4 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold"
-          >
-            Rejoindre challenge ({joins})
-          </button>
-        </Card>
-
-        <Card titre="Projets etudiants (demo)">
-          <div className="space-y-3">
-            {projets.map((p) => (
-              <div key={p.id} className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-700 pb-2">
-                <div className="text-sm">
-                  {p.titre} - {p.auteur} ({p.ecole})
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setLikes((prev) => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 }))}
-                  className="px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm font-semibold"
-                >
-                  Voter projet ({p.likes})
-                </button>
-              </div>
-            ))}
-          </div>
-        </Card>
 
         <Card titre="Cours créés par étudiants (demo)">
           <div className="space-y-3">
