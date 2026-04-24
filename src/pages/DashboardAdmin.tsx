@@ -72,12 +72,17 @@ export default function DashboardAdmin() {
     setCoursState((prev) => prev.filter((c) => c.id !== id));
   };
 
+  // ✅ CORRECTION BLOQUER ETUDIANT
   const bloquerEtudiant = (id: number) => {
-    const list = listeEtudiants();
-    const updated = list.map((e) =>
+    const list = JSON.parse(localStorage.getItem("etudiants") || "[]");
+
+    const updated = list.map((e: any) =>
       e.id === id ? { ...e, statut: "bloque" } : e
     );
+
     localStorage.setItem("etudiants", JSON.stringify(updated));
+
+    alert("⛔ Étudiant bloqué !");
     setVersion((v) => v + 1);
   };
 
@@ -265,7 +270,7 @@ export default function DashboardAdmin() {
                       duree: Number(e.target.value),
                     })
                   }
-                  className="ml-2 border px-2"
+                  className="ml-2 border px-2 text-black dark:text-white bg-white dark:bg-slate-800"
                 />
               </label>
 
@@ -284,6 +289,7 @@ export default function DashboardAdmin() {
           >
             Déconnexion
           </button>
+
         </main>
       </div>
     </div>
