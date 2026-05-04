@@ -14,13 +14,9 @@ export default function DashboardAdmin() {
 
   const [version, setVersion] = useState(0);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [newAliasBySchool, setNewAliasBySchool] = useState<Record<string, string>>({});
   const [hiddenCoursIds, setHiddenCoursIds] = useState<number[]>([]);
   const formateurs = useMemo(() => listeFormateurs(), [version]);
   const etudiants = listeEtudiants();
-  const [aliasesBySchool, setAliasesBySchool] = useState<Record<string, string[]>>(() =>
-    Object.fromEntries(listeEcoles().map((e) => [e.id, [...e.alias]])),
-  );
   const [commentaires, setCommentaires] = useState(() => listeTousCommentairesCours());
 
   useEffect(() => {
@@ -28,17 +24,8 @@ export default function DashboardAdmin() {
   }, [activeTab]);
 
   const formateursEnAttente = formateurs.filter((f) => f.statut === "en_attente");
-  const formateursAcceptes = formateurs.filter((f) => f.statut === "accepte");
-  const activiteRecente = etudiants.slice(0, 6).map((e) => `${e.nom} (${getLabelEcoleCanonique(e.ecoleId)})`);
+  const activiteRecente = etudiants.slice(0, 6).map((e) => `${e.nom}`);
   const coursPopulaires = listeCours.slice(0, 5);
-
-  const scoreParEcole = etudiants.reduce<Record<string, number>>((acc, e) => {
-    acc[e.ecoleId] = (acc[e.ecoleId] ?? 0) + (e.points ?? 0);
-    return acc;
-  }, {});
-  const classementEcoles = Object.entries(scoreParEcole)
-    .map(([ecoleId, score]) => ({ ecoleId, score, label: getLabelEcoleCanonique(ecoleId) }))
-    .sort((a, b) => b.score - a.score);
 
   const notifications = [
     formateursEnAttente.length > 0 ? `🔔 Nouvelle demande formateur (${formateursEnAttente.length})` : null,
@@ -51,25 +38,13 @@ export default function DashboardAdmin() {
     setVersion((v) => v + 1);
   };
 
-  const addAlias = (ecoleId: string) => {
-    const raw = (newAliasBySchool[ecoleId] ?? "").trim().toLowerCase();
-    if (!raw) return;
-    setAliasesBySchool((prev) => {
-      const aliases = prev[ecoleId] ?? [];
-      if (aliases.includes(raw)) return prev;
-      return { ...prev, [ecoleId]: [...aliases, raw] };
-    });
-    setNewAliasBySchool((prev) => ({ ...prev, [ecoleId]: "" }));
-  };
-
   const menuItems = [
     { id: "dashboard", label: "📊 Dashboard" },
     { id: "formateurs", label: "👨‍🏫 Formateurs" },
     { id: "etudiants", label: "👨‍🎓 Etudiants" },
     { id: "cours", label: "📚 Cours" },
-    { id: "classements", label: "🏆 Classements" },
-    { id: "moderation", label: "🧹 Moderation" },
     { id: "ecoles", label: "🏫 Ecoles" },
+    { id: "moderation", label: "🧹 Moderation" },
     { id: "parametres", label: "⚙️ Parametres" },
   ];
 
@@ -120,10 +95,6 @@ export default function DashboardAdmin() {
                 <div className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-5">
                   <p className="text-sm text-gray-500">📚 Cours</p>
                   <p className="text-3xl font-bold">{listeCours.length}</p>
-                </div>
-                <div className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-5">
-                  <p className="text-sm text-gray-500">🏫 Ecoles</p>
-                  <p className="text-3xl font-bold">{listeEcoles().length}</p>
                 </div>
               </div>
 
@@ -214,7 +185,7 @@ export default function DashboardAdmin() {
               <ul className="mt-4 space-y-3">
                 {etudiants.map((e) => (
                   <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3">
-                    <span>{e.nom} — {e.ecoleCanonique}</span>
+                    <span>{e.nom}</span>
                     <span className="text-sm text-gray-500">Activite: {e.coursSuivis.length} cours</span>
                   </li>
                 ))}
@@ -241,21 +212,25 @@ export default function DashboardAdmin() {
               </ul>
             </section>
           )}
-
-          {activeTab === "classements" && (
+          {activeTab === "ecoles" && (
             <section className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-6">
-              <h2 className="text-lg font-bold">🏆 Classements</h2>
-              <ol className="mt-4 space-y-2">
-                {classementEcoles.map((ecole, i) => (
-                  <li key={ecole.ecoleId} className="flex justify-between rounded-lg bg-gray-50 dark:bg-slate-800 px-3 py-2">
-                    <span>#{i + 1} {ecole.label}</span>
-                    <span className="font-semibold">{ecole.score} pts</span>
-                  </li>
+              <h2 className="text-lg font-bold">🏫 Ecoles partenaires</h2>
+              <div className="mt-4 grid gap-4">
+                {listeEcoles().map((ec) => (
+                  <div key={ec.id} className="rounded-xl border border-gray-200 dark:border-slate-700 p-4 flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold">{ec.label}</p>
+                      <p className="text-sm text-gray-500">{ec.domain}</p>
+                    </div>
+                    <div className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-1 rounded-full font-bold">
+                      {etudiants.filter((e) => e.ecoleId === ec.id).length} étudiants
+                    </div>
+                  </div>
                 ))}
-              </ol>
-              <p className="text-sm text-gray-500 mt-3">Top formateurs actifs: {formateursAcceptes.length}</p>
+              </div>
             </section>
           )}
+
 
           {activeTab === "moderation" && (
             <section className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-6">
@@ -289,31 +264,6 @@ export default function DashboardAdmin() {
                     La modération est centrée sur les commentaires et le contenu de cours.
                   </p>
                 </div>
-              </div>
-            </section>
-          )}
-
-          {activeTab === "ecoles" && (
-            <section className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-6">
-              <h2 className="text-lg font-bold">🏫 Gestion des ecoles et alias</h2>
-              <div className="mt-4 space-y-4">
-                {listeEcoles().map((ecole) => (
-                  <div key={ecole.id} className="rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-                    <p className="font-semibold">{ecole.label}</p>
-                    <p className="text-sm text-gray-500 mt-1">Alias: {(aliasesBySchool[ecole.id] ?? []).join(", ")}</p>
-                    <div className="mt-3 flex gap-2">
-                      <input
-                        value={newAliasBySchool[ecole.id] ?? ""}
-                        onChange={(e) => setNewAliasBySchool((prev) => ({ ...prev, [ecole.id]: e.target.value }))}
-                        placeholder="ajouter un alias"
-                        className="flex-1 rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-                      />
-                      <button type="button" onClick={() => addAlias(ecole.id)} className="px-3 py-2 rounded-lg bg-orange-500 text-white font-semibold">
-                        Ajouter
-                      </button>
-                    </div>
-                  </div>
-                ))}
               </div>
             </section>
           )}

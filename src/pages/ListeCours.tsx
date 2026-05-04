@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
 import CarteCours from "../composants/CarteCours";
@@ -8,9 +9,15 @@ import { listeCours } from "../services/coursService";
 export default function ListeCours(props: any) {
   const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [recherche, setRecherche] = useState("");
   const [categorie, setCategorie] = useState("Toutes");
   const [niveau, setNiveau] = useState("Tous");
+
+  useEffect(() => {
+    const uni = searchParams.get("university");
+    if (uni) setRecherche(uni);
+  }, [searchParams]);
 
   const categories = useMemo(
     () => ["Toutes", ...new Set(listeCours.map((c) => c.categorie))],

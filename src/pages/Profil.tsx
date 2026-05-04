@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { listeCours, type Cours } from "../services/coursService";
 import type { Etudiant } from "../services/etudiantService";
+import { genererCertificatPdf } from "../services/certificatService";
+import { getParcoursMeta } from "../services/parcoursService";
 
 type CoursSuivi = Etudiant["coursSuivis"][number];
 import BarreNavigation from "../composants/BarreNavigation";
@@ -35,11 +37,10 @@ export default function Profil(props: any) {
       <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
 
       <section className="max-w-6xl mx-auto px-6 py-12 md:py-16">
-        <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 md:p-10 shadow-xl">
+        <div className="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 md:p-10 shadow-xl animate-knd-fade-up">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] font-bold text-blue-600 dark:text-blue-300">Espace étudiant</p>
-              <h2 className="mt-3 text-3xl md:text-4xl font-black text-gray-900 dark:text-white">Profil magnifique & productif</h2>
+              <h2 className="mt-3 text-3xl md:text-4xl font-black text-gray-900 dark:text-white">Mon profil étudiant</h2>
               <p className="mt-3 text-gray-700 dark:text-slate-300 max-w-2xl">
                 Un profil clair avec vos statistiques de progression, vos badges et des accès rapides vers vos actions clés.
               </p>
@@ -63,7 +64,7 @@ export default function Profil(props: any) {
           ].map((card) => (
             <article
               key={card.label}
-              className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-md"
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-md hover:-translate-y-1 transition"
             >
               <p className="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">{card.label}</p>
               <p className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{card.value}</p>
@@ -139,6 +140,81 @@ export default function Profil(props: any) {
           </div>
         </div>
 
+        <div className="mt-8 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-md">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">Certificats</h3>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            Les certificats sont disponibles apres validation du parcours complet et du projet final.
+          </p>
+          <div className="mt-4 space-y-3">
+            {etudiant.projetParcoursValide && etudiant.parcoursGuideChoisi && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/30 p-4">
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                    {getParcoursMeta(etudiant.parcoursGuideChoisi)?.titre ?? "Parcours guide"}
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">Certificat global de parcours disponible.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    genererCertificatPdf(
+                      etudiant.nom,
+                      getParcoursMeta(etudiant.parcoursGuideChoisi)?.titre ?? "Parcours guide",
+                      etudiant.dateValidationParcours ?? new Date().toISOString()
+                    )
+                  }
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Telecharger certificat parcours
+                </button>
+              </div>
+            )}
+
+            {coursEtudiant
+              .filter((cours) => {
+                const suivi = etudiant.coursSuivis.find((cs: CoursSuivi) => cs.idCours === cours.id);
+                return (suivi?.progression ?? 0) >= 100;
+              })
+              .map((cours) => {
+                const suivi = etudiant.coursSuivis.find((cs: CoursSuivi) => cs.idCours === cours.id);
+                const valide = suivi?.projetFinalValide === true;
+                return (
+                  <div
+                    key={`cert-${cours.id}`}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-4"
+                  >
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">{cours.titre}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        {valide ? "Projet final valide." : "Projet final non valide."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!valide}
+                      onClick={() =>
+                        genererCertificatPdf(
+                          etudiant.nom,
+                          cours.titre,
+                          suivi?.dateValidationProjet ?? new Date().toISOString()
+                        )
+                      }
+                      className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Telecharger PDF
+                    </button>
+                  </div>
+                );
+              })}
+            {coursEtudiant.filter((cours) => {
+              const suivi = etudiant.coursSuivis.find((cs: CoursSuivi) => cs.idCours === cours.id);
+              return (suivi?.progression ?? 0) >= 100;
+            }).length === 0 && (
+              <p className="text-sm text-slate-700 dark:text-slate-300">Aucun certificat disponible pour le moment.</p>
+            )}
+          </div>
+        </div>
+
         <h3 className="text-2xl font-bold mt-12 mb-6 text-gray-900 dark:text-white">Mes cours suivis</h3>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {coursEtudiant.length > 0 ? (
@@ -146,12 +222,12 @@ export default function Profil(props: any) {
               <CarteCours key={c.id} cours={c} onVoirCours={(id: number) => navigate(`/cours/${id}`)} />
             ))
           ) : (
-            <p className="text-gray-600 col-span-full bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+            <p className="text-gray-700 dark:text-slate-100 col-span-full bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700 p-8 text-center font-medium">
               Vous n&apos;avez pas encore commencé de cours.{" "}
               <button
                 type="button"
                 onClick={() => navigate("/cours")}
-                className="text-blue-600 font-semibold hover:underline"
+                className="text-blue-600 dark:text-blue-400 font-semibold hover:underline"
               >
                 Explorer le catalogue
               </button>

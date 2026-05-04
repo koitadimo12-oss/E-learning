@@ -2,7 +2,6 @@ export type CommentaireCours = {
   id: string;
   idCours: number;
   auteur: string;
-  ecoleLabel: string;
   texte: string;
   date: string;
 };
@@ -37,14 +36,12 @@ export function getCommentairesCours(idCours: number): CommentaireCours[] {
 export function ajouterCommentaireCours(
   idCours: number,
   auteur: string,
-  ecoleLabel: string,
   texte: string
 ): CommentaireCours {
   const c: CommentaireCours = {
     id: `${Date.now()}`,
     idCours,
     auteur,
-    ecoleLabel,
     texte: texte.trim(),
     date: new Date().toISOString(),
   };

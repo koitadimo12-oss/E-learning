@@ -53,10 +53,10 @@ export default function Inscription(props: any) {
       return;
     }
 
-    const user = inscriptionEtudiant(`${nom} ${prenom}`.trim(), email, password, "unipro", niveauEtude);
+    const user = inscriptionEtudiant(`${nom} ${prenom}`.trim(), email, password, niveauEtude);
     setError("");
     setEtudiant(user);
-    navigate("/profil");
+    navigate("/mode-apprentissage");
   };
 
   return (

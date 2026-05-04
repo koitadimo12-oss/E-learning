@@ -8,15 +8,9 @@ import { listeFormateurs, scoreClassementFormateur } from "../services/formateur
 type Props = { etudiant: Etudiant | null; onDeconnexion: () => void };
 
 const etudiantsDemo = [
-  { id: "d1", nom: "Ali", ecole: "UNIPRO", points: 320, badge: "🔥" },
-  { id: "d2", nom: "Awa", ecole: "ENSUP", points: 280, badge: "⭐" },
-  { id: "d3", nom: "Moussa", ecole: "UCAD", points: 250, badge: "🚀" },
-];
-
-const ecolesDemo = [
-  { id: "unipro", label: "UNIPRO", points: 1200, etudiants: 18 },
-  { id: "ensup", label: "ENSUP", points: 1100, etudiants: 16 },
-  { id: "ucad", label: "UCAD", points: 900, etudiants: 14 },
+  { id: "d1", nom: "Ali", points: 320, badge: "🔥" },
+  { id: "d2", nom: "Awa", points: 280, badge: "⭐" },
+  { id: "d3", nom: "Moussa", points: 250, badge: "🚀" },
 ];
 
 export default function ModeDemo(props: Props) {
@@ -27,7 +21,6 @@ export default function ModeDemo(props: Props) {
       id: "c1",
       titre: "Python pour débutants",
       auteur: "Ali",
-      ecole: "UNIPRO",
       inscrits: 32,
       videoType: "youtube",
       video: "https://www.youtube.com/embed/kqtD5dpn9C8",
@@ -36,7 +29,6 @@ export default function ModeDemo(props: Props) {
       id: "c2",
       titre: "React UI rapide",
       auteur: "Awa",
-      ecole: "ENSUP",
       inscrits: 21,
       videoType: "youtube",
       video: "https://www.youtube.com/embed/bMknfKXIFA8",
@@ -44,13 +36,11 @@ export default function ModeDemo(props: Props) {
   ]);
   const [newTitre, setNewTitre] = useState("");
   const [newAuteur, setNewAuteur] = useState("");
-  const [newEcole, setNewEcole] = useState("UNIPRO");
   const [videoType, setVideoType] = useState<"youtube" | "local">("youtube");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [localVideoName, setLocalVideoName] = useState("");
 
   const topEtudiant = [...etudiantsDemo].sort((a, b) => b.points - a.points)[0];
-  const topEcole = [...ecolesDemo].sort((a, b) => b.points - a.points)[0];
   const topProf = [...listeFormateurs()]
     .filter((f) => f.statut === "accepte")
     .sort((a, b) => scoreClassementFormateur(b) - scoreClassementFormateur(a))[0];
@@ -63,7 +53,7 @@ export default function ModeDemo(props: Props) {
           <p className="text-xs font-bold tracking-widest uppercase text-blue-100">MODE DEMO - KAAY NIOU DIANG</p>
           <h1 className="text-3xl md:text-4xl font-black mt-2">Bienvenue dans Kaay Niou Diang (Demo)</h1>
           <p className="mt-3 text-blue-100 max-w-3xl">
-            Explorez une version simulée complète avec étudiants, écoles, cours et classements.
+            Explorez une version simulée complète avec étudiants, cours et classements.
           </p>
           <button
             type="button"
@@ -76,16 +66,12 @@ export default function ModeDemo(props: Props) {
 
         <div className="grid md:grid-cols-4 gap-4">
           <Stat label="Etudiants actifs" valeur="146" />
-          <Stat label="Ecoles" valeur="6" />
           <Stat label="Cours disponibles" valeur={String(coursEtudiants.length)} />
-          <Stat label="Classements" valeur="3" />
+          <Stat label="Classements" valeur="2" />
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card titre="Meilleure école">
-            <p className="font-bold">{topEcole.label}</p>
-            <p className="text-sm text-gray-600 dark:text-slate-300">{topEcole.points} points</p>
-          </Card>
+
           <Card titre="Top étudiant">
             <p className="font-bold">{topEtudiant.nom}</p>
             <p className="text-sm text-gray-600 dark:text-slate-300">{topEtudiant.points} points</p>
@@ -106,14 +92,7 @@ export default function ModeDemo(props: Props) {
           <Card titre="Section etudiants (demo)">
             {etudiantsDemo.map((e) => (
               <p key={e.id} className="text-sm py-1">
-                {e.nom} - {e.ecole} - {e.points} pts {e.badge}
-              </p>
-            ))}
-          </Card>
-          <Card titre="Section ecoles (demo)">
-            {ecolesDemo.map((e, i) => (
-              <p key={e.id} className="text-sm py-1">
-                #{i + 1} {e.label} - {e.points} pts - {e.etudiants} etudiants
+                {e.nom} - {e.points} pts {e.badge}
               </p>
             ))}
           </Card>
@@ -125,7 +104,7 @@ export default function ModeDemo(props: Props) {
               <div key={c.id} className="border-b border-gray-100 dark:border-slate-700 pb-3">
                 <div className="flex justify-between gap-3">
                   <div className="text-sm">
-                    {c.titre} - {c.auteur} ({c.ecole})
+                    {c.titre} - {c.auteur}
                   </div>
                   <span className="text-xs rounded-full px-2 py-1 bg-blue-100 dark:bg-blue-900/40">{c.inscrits} inscrits</span>
                 </div>
@@ -146,17 +125,8 @@ export default function ModeDemo(props: Props) {
               value={newAuteur}
               onChange={(e) => setNewAuteur(e.target.value)}
               placeholder="Nom étudiant"
-              className="rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 bg-white dark:bg-slate-950 text-sm"
+              className="sm:col-span-2 rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 bg-white dark:bg-slate-950 text-sm"
             />
-            <select
-              value={newEcole}
-              onChange={(e) => setNewEcole(e.target.value)}
-              className="rounded-lg border border-gray-200 dark:border-slate-700 px-3 py-2 bg-white dark:bg-slate-950 text-sm"
-            >
-              <option>UNIPRO</option>
-              <option>ENSUP</option>
-              <option>UCAD</option>
-            </select>
           </div>
           <div className="mt-2 grid sm:grid-cols-3 gap-2">
             <select
@@ -194,7 +164,6 @@ export default function ModeDemo(props: Props) {
                   id: `c-${Date.now()}`,
                   titre: newTitre.trim(),
                   auteur: newAuteur.trim(),
-                  ecole: newEcole,
                   inscrits: 0,
                   videoType,
                   video,

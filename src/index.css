@@ -197,3 +197,23 @@
 .dark .text-gray-500 {
   color: rgb(148 163 184) !important;
 }
+
+/* Fix background colors in dark mode */
+.dark .bg-white {
+  background-color: rgb(15 23 42) !important;
+}
+.dark .bg-gray-50 {
+  background-color: rgb(15 23 42) !important;
+}
+.dark .bg-gray-100 {
+  background-color: rgb(30 41 59) !important;
+}
+.dark .border-gray-100 {
+  border-color: rgb(51 65 85) !important;
+}
+.dark .border-gray-200 {
+  border-color: rgb(51 65 85) !important;
+}
+.dark .divide-y > * + * {
+  border-color: rgb(51 65 85) !important;
+}

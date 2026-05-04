@@ -73,6 +73,11 @@ export default function Acceuil(props: Props) {
                   {etudiant ? `Cap sur le niveau ${etudiant.niveauEtude}.` : "Montez de niveau chaque semaine."}
                 </span>
               </h2>
+              {!etudiant && (
+                <p className="mt-4 text-base sm:text-lg text-blue-100/90 max-w-xl leading-relaxed">
+                  Une expérience orientée <span className="font-bold text-white">micro-learning</span> avec des cours YouTube, des quiz intelligents et un suivi personnalisé.
+                </p>
+              )}
               <p className="mt-6 text-lg text-blue-100/90 max-w-xl leading-relaxed">
                 Cours YouTube, quiz intelligents, favoris & notes locales — une expérience pensée pour la vie réelle des
                 étudiants.
@@ -121,14 +126,11 @@ export default function Acceuil(props: Props) {
                     </div>
                   ))}
                 </div>
-                <div className="rounded-2xl overflow-hidden border border-white/10 aspect-video bg-black/40">
+                <div className="rounded-2xl overflow-hidden border border-white/10 aspect-video bg-black/40 max-w-sm">
                   <img
-                    src="/Hero.png"
-                    alt=""
+                    src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop"
+                    alt="Étudiants apprenant en ligne"
                     className="w-full h-full object-cover opacity-90"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
                   />
                 </div>
               </div>
@@ -248,6 +250,70 @@ export default function Acceuil(props: Props) {
                 >
                   {cat}
                 </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      </SectionReveal>
+
+      <SectionReveal>
+        <section className="py-16 max-w-4xl mx-auto px-6 md:px-10">
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 md:p-12 shadow-sm">
+            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Accès visiteur</h3>
+            <p className="mt-3 text-slate-700 dark:text-slate-300 leading-relaxed text-lg">
+              Sans connexion, vous pouvez parcourir le catalogue et regarder <strong>30 secondes</strong> de chaque vidéo.
+              Pour accéder au texte complet, aux quiz et aux modules, il faut créer un compte.
+            </p>
+            <div className="mt-10 grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { t: "Catalogue", d: "Accessible à tous" },
+                { t: "Vidéo", d: "Preview 30 secondes" },
+                { t: "Texte", d: "Réservé aux inscrits" },
+                { t: "Quiz", d: "Réservé aux inscrits" },
+              ].map((x) => (
+                <div
+                  key={x.t}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 p-5 text-center transition hover:border-blue-300"
+                >
+                  <p className="font-bold text-slate-900 dark:text-white mb-1">{x.t}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{x.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </SectionReveal>
+
+      <SectionReveal>
+        <section className="py-16 bg-gray-100 dark:bg-slate-900/30 border-y border-gray-200 dark:border-white/5">
+          <div className="max-w-6xl mx-auto px-6 md:px-10">
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white text-center">
+              Universités prestigieuses
+            </h3>
+            <p className="text-center text-gray-600 dark:text-slate-300 mt-3 max-w-2xl mx-auto">
+              Accédez aux cours des plus grandes universités du monde.
+            </p>
+            <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                { name: "Harvard", img: "https://images.unsplash.com/photo-1562774053-701939374585?w=600&auto=format&fit=crop", count: "6 cours" },
+                { name: "MIT", img: "https://images.unsplash.com/photo-1564981797816-1043664bf78d?w=600&auto=format&fit=crop", count: "3 cours" },
+                { name: "Stanford", img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&auto=format&fit=crop", count: "3 cours" },
+                { name: "Oxford", img: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&auto=format&fit=crop", count: "3 cours" },
+              ].map((u) => (
+                <button
+                  key={u.name}
+                  type="button"
+                  onClick={() => navigate(`/cours?university=${encodeURIComponent(u.name)}`)}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden text-left hover:-translate-y-1 transition-all shadow-sm hover:shadow-lg group"
+                >
+                  <div className="h-32 overflow-hidden">
+                    <img src={u.img} alt={u.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  </div>
+                  <div className="p-4">
+                    <p className="font-bold text-slate-900 dark:text-white">{u.name}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">{u.count} disponibles</p>
+                  </div>
+                </button>
               ))}
             </div>
           </div>

@@ -50,7 +50,17 @@ export default function PiedPage() {
                 onClick={() => navigate("/#a-propos")}
                 className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
               >
-                A propos (Accueil)
+                À propos de nous
+              </button>
+            </li>
+            <li>
+              <button type="button" className="hover:text-orange-300 text-slate-300 transition-colors cursor-not-allowed text-left">
+                Bibliothèque (Bientôt)
+              </button>
+            </li>
+            <li>
+              <button type="button" className="hover:text-orange-300 text-slate-300 transition-colors cursor-not-allowed text-left">
+                Classements
               </button>
             </li>
           </ul>

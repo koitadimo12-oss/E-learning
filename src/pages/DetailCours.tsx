@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
 import { listeCours, type Cours } from "../services/coursService";
+import { useLanguage } from "../elearn/i18n/LanguageContext";
+import { getAiLesson, type AiLessonResponse } from "../services/aiLessonApi";
 import {
   getEtudiant,
   mettreAJourChapitresCompletes,
   recompenserQuizReussi,
   toucherStreak,
+  validerProjetFinal,
 } from "../services/etudiantService";
+import { getParcoursCoursIds } from "../services/parcoursService";
 import {
   aDejaLike,
   estFavori,
@@ -22,7 +26,15 @@ import {
 import { ajouterCommentaireCours, getCommentairesCours } from "../services/commentairesService";
 
 const SEUIL_PROGRESSION_CONTENU = 0.85;
-const SEUIL_REUSSITE_QUIZ = 2 / 3;
+const SEUIL_REUSSITE_QUIZ = 0.5;
+const PREVIEW_SECONDS = 30;
+
+function youtubePreviewUrl(url: string) {
+  if (!url.includes("youtube.com/embed/")) return url;
+  const hasQuery = url.includes("?");
+  const sep = hasQuery ? "&" : "?";
+  return `${url}${sep}start=0&end=${PREVIEW_SECONDS}`;
+}
 
 function cleChapitresInvite(idCours: number) {
   return `knd_chapitres_invite_${idCours}`;
@@ -34,6 +46,8 @@ export default function DetailCours(props: any) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const cours: Cours | undefined = listeCours.find((c) => c.id === Number(id));
+  const visiteur = !etudiant;
+  const { lang } = useLanguage();
 
   const [score, setScore] = useState<number | null>(null);
   const [reponses, setReponses] = useState<{ [key: number]: string }>({});
@@ -45,6 +59,15 @@ export default function DetailCours(props: any) {
   const [commentaire, setCommentaire] = useState("");
   const [commentsRev, setCommentsRev] = useState(0);
   const [likeRev, setLikeRev] = useState(0);
+  const [livrableProjet, setLivrableProjet] = useState("");
+  const [projetMessage, setProjetMessage] = useState("");
+
+  const [aiLesson, setAiLesson] = useState<AiLessonResponse | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const voiceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const chapitreCourant = cours ? cours.chapitres[indexChapitre] : undefined;
 
   const rafraichirEtudiant = useCallback(() => {
     if (!etudiant || !setEtudiant) return;
@@ -81,6 +104,48 @@ export default function DetailCours(props: any) {
     }
   }, [cours, etudiant]);
 
+  useEffect(() => {
+    // charge le contenu IA (étudiant only)
+    if (!cours || !chapitreCourant || visiteur) return;
+    const run = async () => {
+      setAiLoading(true);
+      setAiError(null);
+      try {
+        const res = await getAiLesson({
+          lang,
+          courseTitle: cours.titre,
+          lessonTitle: chapitreCourant.titre,
+          youtubeUrl: chapitreCourant.videoYoutube,
+        });
+        setAiLesson(res);
+      } catch (e: any) {
+        setAiError(e?.message ?? "Erreur IA");
+      } finally {
+        setAiLoading(false);
+      }
+    };
+    void run();
+  }, [cours?.id, chapitreCourant?.titre, chapitreCourant?.videoYoutube, visiteur, lang]);
+
+  const stopVoice = () => {
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      // ignore
+    }
+  };
+
+  const speak = (text: string) => {
+    stopVoice();
+    if (!("speechSynthesis" in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang === "wo" ? "fr-FR" : lang === "ar" ? "ar-SA" : lang === "en" ? "en-US" : "fr-FR";
+    u.rate = 1;
+    u.pitch = 1;
+    voiceRef.current = u;
+    window.speechSynthesis.speak(u);
+  };
+
   const idsChapitresValides = useMemo(
     () => new Set((cours?.chapitres ?? []).map((ch) => ch.id)),
     [cours]
@@ -97,7 +162,16 @@ export default function DetailCours(props: any) {
     return Math.max(1, Math.ceil(n * SEUIL_PROGRESSION_CONTENU));
   }, [cours]);
 
-  const quizInteractif = nbChapitresLus >= chapitresRequisPourQuiz;
+  const estParcoursGuide = etudiant?.modeApprentissage !== "cours-libre";
+  const parcoursIds = getParcoursCoursIds(etudiant?.parcoursGuideChoisi);
+  const positionModule = parcoursIds.findIndex((courseId) => courseId === Number(id));
+  const modulesValides = parcoursIds.filter((courseId) => {
+    const suivi = etudiant?.coursSuivis.find((cs: { idCours: number; progression: number }) => cs.idCours === courseId);
+    return (suivi?.progression ?? 0) >= 100;
+  }).length;
+  const indexDebloque = Math.min(modulesValides, Math.max(0, parcoursIds.length - 1));
+  const moduleBloque = estParcoursGuide && positionModule >= 0 && positionModule > indexDebloque;
+  const quizInteractif = estParcoursGuide ? nbChapitresLus >= chapitresRequisPourQuiz : true;
 
   const persisterChapitres = useCallback(
     (ids: number[]) => {
@@ -151,8 +225,8 @@ export default function DetailCours(props: any) {
     );
   }
 
-  const chapitreCourant = cours.chapitres[indexChapitre];
   const totalCh = cours.chapitres.length;
+  const chapitreDebloque = estParcoursGuide ? Math.min(chapitresCompletes.length, Math.max(0, totalCh - 1)) : totalCh - 1;
 
   const handleReponse = (index: number, valeur: string) => {
     if (!quizInteractif) return;
@@ -187,6 +261,32 @@ export default function DetailCours(props: any) {
   };
 
   const pctReussite = score !== null && cours.quiz.length ? Math.round((score / cours.quiz.length) * 100) : null;
+  const suiviCours = etudiant?.coursSuivis.find((cs: { idCours: number }) => cs.idCours === cours.id);
+  const projetValide = suiviCours?.projetFinalValide === true;
+  const progressionCours = suiviCours?.progression ?? 0;
+
+  if (moduleBloque) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
+        <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} />
+        <section className="max-w-3xl mx-auto px-6 py-14">
+          <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-6">
+            <h2 className="text-xl font-bold text-amber-900 dark:text-amber-200">Module verrouille</h2>
+            <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
+              Dans le parcours guide, vous devez valider le module precedent avant d'acceder a celui-ci.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(`/cours/${parcoursIds[indexDebloque]}`)}
+              className="mt-4 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Aller au module debloque
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
@@ -201,12 +301,13 @@ export default function DetailCours(props: any) {
                 <li key={ch.id}>
                   <button
                     type="button"
+                    disabled={estParcoursGuide && i > chapitreDebloque}
                     onClick={() => setIndexChapitre(i)}
                     className={`w-full text-left px-4 py-3 text-sm transition ${
                       i === indexChapitre
                         ? "bg-blue-50 dark:bg-blue-950/50 font-semibold text-blue-800 dark:text-blue-200"
                         : "hover:bg-gray-50 dark:hover:bg-slate-800"
-                    }`}
+                    } ${(estParcoursGuide && i > chapitreDebloque) ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <span className="opacity-60 mr-2">{i + 1}.</span>
                     {ch.titre}
@@ -289,27 +390,46 @@ export default function DetailCours(props: any) {
               </button>
               <button
                 type="button"
-                onClick={() => toggleChapitreLu(chapitreCourant.id)}
+                onClick={() => {
+                  if (!chapitreCourant) return;
+                  toggleChapitreLu(chapitreCourant.id);
+                }}
                 className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 text-sm font-semibold"
               >
-                {chapitresCompletes.includes(chapitreCourant.id) ? "Marquer non terminé" : "Terminer cette leçon"}
+                {chapitreCourant && chapitresCompletes.includes(chapitreCourant.id)
+                  ? "Marquer non terminé"
+                  : "Terminer cette leçon"}
               </button>
-              <button
-                type="button"
-                onClick={() => persisterChapitres(cours.chapitres.map((ch) => ch.id))}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-orange-700 dark:text-orange-300 text-sm font-semibold"
-              >
-                Terminer le cours (toutes les leçons)
-              </button>
+              {visiteur && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/inscription")}
+                  className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold"
+                >
+                  Débloquer l'accès complet
+                </button>
+              )}
+              {!estParcoursGuide && (
+                <button
+                  type="button"
+                  onClick={() => persisterChapitres(cours.chapitres.map((ch) => ch.id))}
+                  className="px-4 py-2 rounded-xl border border-orange-200 text-orange-700 dark:text-orange-300 text-sm font-semibold"
+                >
+                  Terminer le cours (toutes les leçons)
+                </button>
+              )}
             </div>
 
             <div className="mt-6 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/80 dark:bg-slate-900/80 px-4 py-3 text-sm text-blue-900 dark:text-blue-100">
               <p className="font-semibold">Progression</p>
               <p className="mt-1">
                 Leçons validées : {nbChapitresLus} / {cours.chapitres.length}
-                {chapitresRequisPourQuiz > 0 && (
+                {estParcoursGuide && chapitresRequisPourQuiz > 0 && (
                   <> — minimum {chapitresRequisPourQuiz} pour débloquer le quiz (~85 % du cours)</>
                 )}
+              </p>
+              <p className="mt-2 text-xs text-blue-700 dark:text-blue-200">
+                Mode actif: {estParcoursGuide ? "Parcours guide" : "Cours simple libre"}.
               </p>
             </div>
 
@@ -319,28 +439,180 @@ export default function DetailCours(props: any) {
                   <h2 className="text-xl font-semibold">{chapitreCourant.titre}</h2>
                   <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Durée indicative : {chapitreCourant.duree}</p>
                 </div>
-                <div className="aspect-video max-w-4xl mx-auto bg-black">
+                <div className="aspect-video max-w-3xl mx-auto bg-black rounded-xl overflow-hidden">
                   <iframe
                     width="100%"
                     height="100%"
-                    src={chapitreCourant.videoYoutube}
+                    src={visiteur ? youtubePreviewUrl(chapitreCourant.videoYoutube) : chapitreCourant.videoYoutube}
                     title={chapitreCourant.titre}
                     allowFullScreen
                     className="w-full h-full"
                   />
                 </div>
-                <div className="p-4 md:p-6">
-                  <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">Points abordés</h3>
-                  <ul className="mt-3 list-disc pl-6 space-y-2 text-gray-700 dark:text-slate-300">
-                    {chapitreCourant.contenu.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
+                {!visiteur ? (
+                  <div className="p-4 md:p-6 space-y-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">Texte explicatif (IA)</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                          Transcript simulé + explication structurée (résumé, points clés, exemple, approfondissement).
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => (aiLesson ? speak(aiLesson.content.summary) : null)}
+                          disabled={!aiLesson}
+                          className="px-3 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold disabled:opacity-50"
+                        >
+                          ▶ Voix off (résumé)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => (aiLesson ? speak(aiLesson.content.deepDive) : null)}
+                          disabled={!aiLesson}
+                          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold disabled:opacity-50"
+                        >
+                          ▶ Voix off (détails)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopVoice}
+                          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold"
+                        >
+                          ⏹ Stop
+                        </button>
+                      </div>
+                    </div>
+
+                    {aiError && (
+                      <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 p-4">
+                        <p className="font-semibold text-red-800 dark:text-red-200">{aiError}</p>
+                      </div>
+                    )}
+
+                    {!aiError && (
+                      <div className="grid lg:grid-cols-2 gap-4">
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 p-5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Résumé</p>
+                          <p className={`mt-2 font-semibold ${aiLoading ? "opacity-60" : ""}`}>{aiLesson?.content.summary ?? "Génération..."}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 p-5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Points clés</p>
+                          <ul className={`mt-2 list-disc pl-5 text-sm text-slate-700 dark:text-slate-300 space-y-1 ${aiLoading ? "opacity-60" : ""}`}>
+                            {(aiLesson?.content.keyPoints ?? ["Génération...", "…"]).map((p) => (
+                              <li key={p}>{p}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Exemple</p>
+                          <p className={`mt-2 text-sm text-slate-700 dark:text-slate-300 ${aiLoading ? "opacity-60" : ""}`}>
+                            {aiLesson?.content.example ?? "Génération..."}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Explication approfondie</p>
+                          <p className={`mt-2 text-sm text-slate-700 dark:text-slate-300 ${aiLoading ? "opacity-60" : ""}`}>
+                            {aiLesson?.content.deepDive ?? "Génération..."}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <details className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                      <summary className="cursor-pointer font-semibold text-slate-900 dark:text-white">
+                        Transcript (simulé)
+                      </summary>
+                      <p className={`mt-3 text-sm text-slate-700 dark:text-slate-300 leading-relaxed ${aiLoading ? "opacity-60" : ""}`}>
+                        {aiLesson?.transcript ?? "Génération..."}
+                      </p>
+                    </details>
+                  </div>
+                ) : (
+                  <div className="p-4 md:p-6">
+                    <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4">
+                      <p className="font-semibold text-amber-900 dark:text-amber-200">
+                        Mode visiteur: aperçu vidéo limité à {PREVIEW_SECONDS}s.
+                      </p>
+                      <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                        Le texte complet du cours et les quiz sont réservés aux utilisateurs connectés.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => navigate("/connexion")}
+                          className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-semibold"
+                        >
+                          Se connecter
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate("/inscription")}
+                          className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold"
+                        >
+                          Créer un compte
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </article>
             )}
 
             <div className="mt-10">
+              {etudiant && estParcoursGuide && progressionCours >= 100 && (
+                <div className="mb-8 rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 p-5">
+                  <h2 className="text-lg font-semibold text-emerald-900 dark:text-emerald-200">Projet final du parcours</h2>
+                  {projetValide ? (
+                    <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">
+                      Projet final validé. Le certificat PDF est disponible dans votre profil.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-sm text-emerald-800 dark:text-emerald-300">
+                        Décrivez votre livrable puis validez ce projet pour débloquer le certificat.
+                      </p>
+                      <textarea
+                        value={livrableProjet}
+                        onChange={(e) => setLivrableProjet(e.target.value)}
+                        className="mt-3 w-full min-h-[100px] rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-slate-900 p-3 text-sm"
+                        placeholder="Exemple: application React deployée, mini API Node, exercice pratique..."
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!livrableProjet.trim()) {
+                            setProjetMessage("Ajoutez d'abord une description de votre projet final.");
+                            return;
+                          }
+                          const ok = validerProjetFinal(etudiant.id, cours.id);
+                          if (!ok) {
+                            setProjetMessage("Le projet ne peut pas etre valide tant que le cours n'est pas termine.");
+                            return;
+                          }
+                          setProjetMessage("Projet final valide. Votre certificat est maintenant disponible.");
+                          rafraichirEtudiant();
+                        }}
+                        className="mt-3 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition"
+                      >
+                        Valider mon projet final
+                      </button>
+                      {projetMessage && <p className="mt-2 text-sm text-emerald-800 dark:text-emerald-300">{projetMessage}</p>}
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="mb-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 text-sm">
+                <p className="font-semibold text-slate-900 dark:text-slate-100">Parcours propose</p>
+                <ol className="mt-2 list-decimal pl-5 space-y-1 text-slate-700 dark:text-slate-300">
+                  <li>Suivre les lecons videos et valider les chapitres.</li>
+                  <li>Passer le quiz de fin de cours.</li>
+                  <li>Terminer le projet final pour obtenir le certificat PDF.</li>
+                </ol>
+              </div>
+
               <h2 className="text-lg font-semibold">Notes personnelles</h2>
               <p className="text-sm text-gray-500 dark:text-slate-400">Sauvegardées localement sur cet appareil.</p>
               <textarea
@@ -363,7 +635,7 @@ export default function DetailCours(props: any) {
                 {commentaires.map((c) => (
                   <div key={c.id} className="rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-sm">
                     <p className="font-semibold">
-                      {c.auteur} <span className="text-gray-500 font-normal">· {c.ecoleLabel}</span>
+                      {c.auteur}
                     </p>
                     <p className="mt-1 text-gray-700 dark:text-slate-300">{c.texte}</p>
                   </div>
@@ -382,7 +654,7 @@ export default function DetailCours(props: any) {
                     onClick={() => {
                       const t = commentaire.trim();
                       if (!t) return;
-                      ajouterCommentaireCours(cours.id, etudiant.nom, etudiant.ecoleCanonique, t);
+                      ajouterCommentaireCours(cours.id, etudiant.nom, t);
                       setCommentaire("");
                       setCommentsRev((x) => x + 1);
                     }}
@@ -400,6 +672,11 @@ export default function DetailCours(props: any) {
 
         <div className="mt-14 relative max-w-4xl">
           <h2 className="text-xl font-semibold">Quiz</h2>
+          {visiteur && (
+            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+              Connectez-vous pour accéder au quiz et valider le module (≥ 50%).
+            </p>
+          )}
           {!quizInteractif && (
             <p className="mt-2 text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900 rounded-xl px-4 py-3">
               Complétez assez de leçons pour débloquer le quiz interactif.
@@ -407,12 +684,12 @@ export default function DetailCours(props: any) {
           )}
 
           <div
-            className={`mt-6 relative rounded-2xl transition ${!quizInteractif ? "opacity-60" : ""}`}
-            aria-disabled={!quizInteractif}
+            className={`mt-6 relative rounded-2xl transition ${(!quizInteractif || visiteur) ? "opacity-60" : ""}`}
+            aria-disabled={!quizInteractif || visiteur}
           >
-            {!quizInteractif && <div className="absolute inset-0 z-10 cursor-not-allowed rounded-2xl bg-gray-900/5" aria-hidden />}
+            {(!quizInteractif || visiteur) && <div className="absolute inset-0 z-10 cursor-not-allowed rounded-2xl bg-gray-900/5" aria-hidden />}
 
-            <div className={`grid md:grid-cols-2 gap-6 ${!quizInteractif ? "pointer-events-none select-none" : ""}`}>
+            <div className={`grid md:grid-cols-2 gap-6 ${(!quizInteractif || visiteur) ? "pointer-events-none select-none" : ""}`}>
               {cours.quiz.map((q, i) => (
                 <div key={i} className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 p-4">
                   <p className="font-semibold">
@@ -428,7 +705,7 @@ export default function DetailCours(props: any) {
                         <button
                           key={j}
                           type="button"
-                          disabled={!quizInteractif}
+                          disabled={!quizInteractif || visiteur}
                           onClick={() => handleReponse(i, opt)}
                           className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition ${
                             showCorr && isCorrect
@@ -458,7 +735,7 @@ export default function DetailCours(props: any) {
             <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center items-center">
               <button
                 type="button"
-                disabled={!quizInteractif}
+                disabled={!quizInteractif || visiteur}
                 onClick={calculerScore}
                 className="px-8 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 font-semibold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -483,7 +760,7 @@ export default function DetailCours(props: any) {
                 </p>
                 {!quizReussi && (
                   <p className="text-red-700 dark:text-red-300 font-medium">
-                    Il faut au moins deux tiers de bonnes réponses pour valider le cours.
+                    Il faut au moins 50% de bonnes réponses pour valider le module.
                   </p>
                 )}
                 {quizReussi && (

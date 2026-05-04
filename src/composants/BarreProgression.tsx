@@ -7,10 +7,10 @@ export default function BarreProgression(props: any) {
 
   return (
     <div>
-      <div className="text-xs text-gray-500 mb-1">
-        <span className="font-semibold text-gray-700">{progression}% Complété</span>
+      <div className="text-xs text-gray-500 dark:text-slate-300 mb-1">
+        <span className="font-semibold text-gray-700 dark:text-slate-100">{progression}% Complété</span>
       </div>
-      <div className="w-full bg-gray-100 rounded-full h-2.5">
+      <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2.5">
         <div
           className={`${couleur} h-2.5 rounded-full transition-all duration-500`}
           style={{ width: `${progression}%` }}

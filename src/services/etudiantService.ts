@@ -1,6 +1,17 @@
-import { getLabelEcoleCanonique, resoudreEcoleId } from "./ecoleService";
+import { getLabelEcoleCanonique } from "./ecoleService";
 
 export type NiveauEtude = "Débutant" | "Intermédiaire" | "Avancé";
+export type ModeApprentissage = "parcours-guide" | "cours-libre";
+export type ParcoursGuide =
+  | "developpement-web"
+  | "programmation"
+  | "cybersecurite"
+  | "devops"
+  | "data-ia"
+  | "mobile"
+  | "cloud"
+  | "ui-ux"
+  | "gestion-projet";
 
 function normaliserNiveauEtude(value: unknown): NiveauEtude {
   if (value === "Débutant" || value === "Intermédiaire" || value === "Avancé") return value;
@@ -19,10 +30,17 @@ export interface Etudiant {
   ecoleId: string;
   ecoleCanonique: string;
   niveauEtude: NiveauEtude;
+  modeApprentissage: ModeApprentissage;
+  parcoursGuideChoisi?: ParcoursGuide;
+  onboardingApprentissageTermine?: boolean;
+  projetParcoursValide?: boolean;
+  dateValidationParcours?: string;
   coursSuivis: {
     idCours: number;
     progression: number;
     chapitresCompletes?: number[];
+    projetFinalValide?: boolean;
+    dateValidationProjet?: string;
   }[];
   points: number;
   badges: string[];
@@ -39,20 +57,43 @@ function normaliserEtudiantBrut(e: unknown): Etudiant | null {
   if (typeof o.id !== "number" || typeof o.nom !== "string" || typeof o.email !== "string" || typeof o.motDePasse !== "string")
     return null;
 
-  const idEcole = typeof o.ecoleId === "string" ? o.ecoleId : "unipro";
-  const resolu = resoudreEcoleId(idEcole) ?? idEcole;
-
   const coursSuivis = Array.isArray(o.coursSuivis) ? o.coursSuivis : [];
+  const modeApprentissage: ModeApprentissage =
+    o.modeApprentissage === "cours-libre" ? "cours-libre" : "parcours-guide";
+  const parcoursGuideChoisi =
+    typeof o.parcoursGuideChoisi === "string" ? (o.parcoursGuideChoisi as ParcoursGuide) : undefined;
 
   return {
     id: o.id,
     nom: o.nom,
     email: o.email,
     motDePasse: o.motDePasse,
-    ecoleId: resolu,
-    ecoleCanonique: typeof o.ecoleCanonique === "string" ? o.ecoleCanonique : getLabelEcoleCanonique(resolu),
+    ecoleId: typeof o.ecoleId === "string" ? o.ecoleId : "unipro",
+    ecoleCanonique: typeof o.ecoleCanonique === "string" ? o.ecoleCanonique : "Unipro",
     niveauEtude: normaliserNiveauEtude(o.niveauEtude),
-    coursSuivis: coursSuivis as Etudiant["coursSuivis"],
+    modeApprentissage,
+    parcoursGuideChoisi,
+    onboardingApprentissageTermine: o.onboardingApprentissageTermine === true,
+    projetParcoursValide: o.projetParcoursValide === true,
+    dateValidationParcours: typeof o.dateValidationParcours === "string" ? o.dateValidationParcours : undefined,
+    coursSuivis: coursSuivis
+      .filter((item) => item && typeof item === "object")
+      .map((item) => {
+        const suivi = item as Record<string, unknown>;
+        const idCours = typeof suivi.idCours === "number" ? suivi.idCours : 0;
+        const progression = typeof suivi.progression === "number" ? suivi.progression : 0;
+        const chapitresCompletes = Array.isArray(suivi.chapitresCompletes)
+          ? (suivi.chapitresCompletes as number[])
+          : [];
+        return {
+          idCours,
+          progression,
+          chapitresCompletes,
+          projetFinalValide: suivi.projetFinalValide === true,
+          dateValidationProjet:
+            typeof suivi.dateValidationProjet === "string" ? suivi.dateValidationProjet : undefined,
+        };
+      }),
     points: typeof o.points === "number" ? o.points : 0,
     badges: Array.isArray(o.badges) ? (o.badges as string[]) : [],
     streak: typeof o.streak === "number" ? o.streak : 0,
@@ -67,13 +108,17 @@ const etudiantsParDefaut: Etudiant[] = [
     email: "mamadou@example.com",
     motDePasse: "123456",
     ecoleId: "unipro",
-    ecoleCanonique: "UNIPRO",
+    ecoleCanonique: "Unipro",
     niveauEtude: "Intermédiaire",
+    modeApprentissage: "parcours-guide",
+    parcoursGuideChoisi: "developpement-web",
+    onboardingApprentissageTermine: true,
+    projetParcoursValide: false,
     coursSuivis: [
-      { idCours: 1, progression: 60 },
-      { idCours: 2, progression: 0 },
-      { idCours: 3, progression: 0 },
-      { idCours: 4, progression: 0 },
+      { idCours: 1, progression: 60, projetFinalValide: false },
+      { idCours: 2, progression: 0, projetFinalValide: false },
+      { idCours: 3, progression: 0, projetFinalValide: false },
+      { idCours: 4, progression: 0, projetFinalValide: false },
     ],
     points: 120,
     badges: ["Premier pas"],
@@ -123,16 +168,17 @@ export function inscriptionEtudiant(
   const existant = etudiants.find((e) => e.email.toLowerCase() === email.toLowerCase());
   if (existant) return existant;
 
-  const idCanon = resoudreEcoleId(ecoleId) ?? ecoleId;
-
   const newEtudiant: Etudiant = {
     id: Date.now(),
     nom,
     email,
     motDePasse,
-    ecoleId: idCanon,
-    ecoleCanonique: getLabelEcoleCanonique(idCanon),
+    ecoleId,
+    ecoleCanonique: getLabelEcoleCanonique(ecoleId),
     niveauEtude,
+    modeApprentissage: "cours-libre",
+    onboardingApprentissageTermine: false,
+    projetParcoursValide: false,
     coursSuivis: [],
     points: 0,
     badges: [],
@@ -141,6 +187,21 @@ export function inscriptionEtudiant(
   etudiants.push(newEtudiant);
   sauvegarderEtudiants(etudiants);
   return newEtudiant;
+}
+
+export function configurerApprentissageEtudiant(
+  idEtudiant: number,
+  modeApprentissage: ModeApprentissage,
+  parcoursGuideChoisi?: ParcoursGuide
+) {
+  etudiants = chargerEtudiants();
+  const etudiant = etudiants.find((e) => e.id === idEtudiant);
+  if (!etudiant) return null;
+  etudiant.modeApprentissage = modeApprentissage;
+  etudiant.parcoursGuideChoisi = modeApprentissage === "parcours-guide" ? parcoursGuideChoisi : undefined;
+  etudiant.onboardingApprentissageTermine = true;
+  sauvegarderEtudiants(etudiants);
+  return etudiant;
 }
 
 export function connexionEtudiant(email: string, motDePasse: string): Etudiant | null {
@@ -161,7 +222,13 @@ export function mettreAJourProgression(idEtudiant: number, idCours: number, prog
   const progressionSecurisee = Math.max(0, Math.min(100, progression));
 
   if (coursSuivi) coursSuivi.progression = Math.max(coursSuivi.progression, progressionSecurisee);
-  else etudiant.coursSuivis.push({ idCours, progression: progressionSecurisee, chapitresCompletes: [] });
+  else
+    etudiant.coursSuivis.push({
+      idCours,
+      progression: progressionSecurisee,
+      chapitresCompletes: [],
+      projetFinalValide: false,
+    });
 
   sauvegarderEtudiants(etudiants);
 }
@@ -173,7 +240,7 @@ export function mettreAJourChapitresCompletes(idEtudiant: number, idCours: numbe
   const uniques = [...new Set(idsChapitres)].sort((a, b) => a - b);
   let suivi = etudiant.coursSuivis.find((cs) => cs.idCours === idCours);
   if (!suivi) {
-    suivi = { idCours, progression: 0, chapitresCompletes: uniques };
+    suivi = { idCours, progression: 0, chapitresCompletes: uniques, projetFinalValide: false };
     etudiant.coursSuivis.push(suivi);
   } else {
     suivi.chapitresCompletes = uniques;
@@ -201,8 +268,34 @@ export function recompenserQuizReussi(idEtudiant: number, idCours: number) {
   attribuerPoints(etudiant, 25, "quiz_reussi");
   const coursSuivi = etudiant.coursSuivis.find((cs) => cs.idCours === idCours);
   if (coursSuivi) coursSuivi.progression = 100;
-  else etudiant.coursSuivis.push({ idCours, progression: 100, chapitresCompletes: [] });
+  else etudiant.coursSuivis.push({ idCours, progression: 100, chapitresCompletes: [], projetFinalValide: false });
   sauvegarderEtudiants(etudiants);
+}
+
+export function validerProjetFinal(idEtudiant: number, idCours: number) {
+  etudiants = chargerEtudiants();
+  const etudiant = etudiants.find((e) => e.id === idEtudiant);
+  if (!etudiant) return false;
+
+  const coursSuivi = etudiant.coursSuivis.find((cs) => cs.idCours === idCours);
+  if (!coursSuivi || coursSuivi.progression < 100) return false;
+
+  coursSuivi.projetFinalValide = true;
+  coursSuivi.dateValidationProjet = new Date().toISOString();
+  attribuerPoints(etudiant, 40, "projet_final");
+  sauvegarderEtudiants(etudiants);
+  return true;
+}
+
+export function validerProjetParcours(idEtudiant: number) {
+  etudiants = chargerEtudiants();
+  const etudiant = etudiants.find((e) => e.id === idEtudiant);
+  if (!etudiant) return false;
+  etudiant.projetParcoursValide = true;
+  etudiant.dateValidationParcours = new Date().toISOString();
+  attribuerPoints(etudiant, 100, "projet_parcours");
+  sauvegarderEtudiants(etudiants);
+  return true;
 }
 
 export function toucherStreak(idEtudiant: number) {

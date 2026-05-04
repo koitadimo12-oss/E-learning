@@ -23,7 +23,7 @@ export default function CarteCours(props: any) {
   return (
     <div
       onClick={() => onVoirCours(cours.id)}
-      className="bg-white rounded-xl shadow hover:shadow-lg transition cursor-pointer overflow-hidden border border-gray-100"
+      className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer overflow-hidden border border-slate-100 dark:border-slate-800 flex flex-col group"
     >
       <div className="relative h-28 bg-gradient-to-r from-blue-700 to-indigo-600 overflow-hidden">
         {showImage ? (
@@ -68,18 +68,18 @@ export default function CarteCours(props: any) {
       <div className="p-4 flex flex-col">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-extrabold text-lg leading-tight text-gray-900">{cours.titre}</h2>
-            <p className="text-sm text-gray-600 mt-1">{cours.description}</p>
+            <h2 className="font-extrabold text-lg leading-tight text-gray-900 dark:text-slate-100">{cours.titre}</h2>
+            <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">{cours.description}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 mt-3">
-          <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-sm font-bold text-blue-700">
+          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 flex items-center justify-center text-sm font-bold text-blue-700 dark:text-blue-300">
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{cours.instructeur}</p>
-            <p className="text-xs text-gray-500">Niveau: {cours.niveau}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">{cours.instructeur}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-300">Niveau: {cours.niveau}</p>
           </div>
         </div>
 
@@ -92,9 +92,9 @@ export default function CarteCours(props: any) {
             e.stopPropagation();
             onVoirCours(cours.id);
           }}
-          className="mt-4 w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition font-semibold"
+          className="mt-4 w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 py-2.5 rounded-xl group-hover:bg-orange-500 group-hover:text-white transition-colors font-bold border border-slate-200 dark:border-slate-700 group-hover:border-orange-500"
         >
-          Visualiser
+          Visualiser le cours
         </button>
       </div>
     </div>
