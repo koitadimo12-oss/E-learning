@@ -18,4 +18,4 @@ export class CreateBookDto {
 
  @IsString()
  pdfUrl: string;
-}
+}   
