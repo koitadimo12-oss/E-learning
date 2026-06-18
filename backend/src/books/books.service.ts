@@ -1,10 +1,10 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Book } from "./entities/book.entity";
-import { Repository } from "typeorm";
-import { CreateBookDto } from "src/bookss/dto/create-book.dto";
-import { UpdateBookDto } from "src/bookss/dto/update-book.dto";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
+import { Book } from './entities/book.entity';
+import { CreateBookDto } from './dto/create-book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
 @Injectable()
 export class BooksService {
 
