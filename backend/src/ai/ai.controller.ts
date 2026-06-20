@@ -1,34 +1,119 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AiService } from './ai.service';
-import { CreateAiDto } from './dto/create-ai.dto';
-import { UpdateAiDto } from './dto/update-ai.dto';
 
 @Controller('ai')
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
+  constructor(private readonly ai: AiService) {}
 
-  @Post()
-  create(@Body() createAiDto: CreateAiDto) {
-    return this.aiService.create(createAiDto);
+  @Post('chat')
+  chat(@Body() body: { message: string; context?: string; lang?: string }) {
+    return this.ai.chat({ message: body.message, context: body.context, lang: body.lang });
   }
 
-  @Get()
-  findAll() {
-    return this.aiService.findAll();
+  @Post('lesson')
+  lesson(
+    @Body()
+    body: {
+      lang?: string;
+      courseTitle?: string;
+      lessonTitle?: string;
+      youtubeUrl?: string;
+    },
+  ) {
+    return this.ai.lesson({
+      lang: body.lang,
+      courseTitle: body.courseTitle,
+      lessonTitle: body.lessonTitle,
+      youtubeUrl: body.youtubeUrl,
+    });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.aiService.findOne(+id);
+  @Post('simplify')
+  simplify(
+    @Body() body: { topic: string; context?: string; lang?: string },
+  ) {
+    return this.ai.simplify({ topic: body.topic, context: body.context, lang: body.lang });
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAiDto: UpdateAiDto) {
-    return this.aiService.update(+id, updateAiDto);
+  @Post('example')
+  example(
+    @Body() body: { topic: string; context?: string; lang?: string },
+  ) {
+    return this.ai.example({ topic: body.topic, context: body.context, lang: body.lang });
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.aiService.remove(+id);
+  @Post('summary')
+  summary(@Body() body: { title?: string; text?: string; lang?: string }) {
+    return this.ai.summary({ title: body.title, text: body.text, lang: body.lang });
+  }
+
+  @Post('advice')
+  advice(
+    @Body()
+    body: {
+      lastScore?: number;
+      topic?: string;
+      lang?: string;
+      answers?: any;
+    },
+  ) {
+    return this.ai.advice({
+      lastScore: body.lastScore,
+      topic: body.topic,
+      lang: body.lang,
+      answers: body.answers,
+    });
+  }
+
+  @Post('recommend')
+  recommend(@Body() body: { lastScore?: number; domains?: string[] }) {
+    return this.ai.recommend({ lastScore: body.lastScore, domains: body.domains });
+  }
+
+  @Post('quiz')
+  quiz(
+    @Body()
+    body: {
+      lang?: string;
+      topic?: string;
+      count?: number;
+      difficulty?: number;
+    },
+  ) {
+    return this.ai.quiz({
+      lang: body.lang,
+      topic: body.topic,
+      count: body.count,
+      difficulty: body.difficulty,
+    });
+  }
+
+  @Post('game')
+  game(
+    @Body()
+    body: {
+      lang?: string;
+      topic?: string;
+      lastScore?: number;
+      level?: number;
+    },
+  ) {
+    return this.ai.game({
+      lang: body.lang,
+      topic: body.topic,
+      lastScore: body.lastScore,
+      level: body.level,
+    });
+  }
+
+  @Post('daily-game')
+  dailyGame(
+    @Body() body: { coursesTitles: string[]; level: number; lang?: string },
+  ) {
+    return this.ai.dailyGame({
+      coursesTitles: body.coursesTitles,
+      level: body.level,
+      lang: body.lang,
+    });
   }
 }
