@@ -1,34 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { CurrentUser } from '../common/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 import { CertificatesService } from './certificates.service';
-import { CreateCertificateDto } from './dto/create-certificate.dto';
-import { UpdateCertificateDto } from './dto/update-certificate.dto';
 
 @Controller('certificates')
 export class CertificatesController {
-  constructor(private readonly certificatesService: CertificatesService) {}
+  constructor(private readonly certs: CertificatesService) {}
 
-  @Post()
-  create(@Body() createCertificateDto: CreateCertificateDto) {
-    return this.certificatesService.create(createCertificateDto);
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  mine(@CurrentUser() user: User) {
+    return this.certs.myCertificates(user);
   }
 
-  @Get()
-  findAll() {
-    return this.certificatesService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.certificatesService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCertificateDto: UpdateCertificateDto) {
-    return this.certificatesService.update(+id, updateCertificateDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.certificatesService.remove(+id);
+  @UseGuards(JwtAuthGuard)
+  @Post('issue/:courseId')
+  issue(
+    @CurrentUser() user: User,
+    @Param('courseId') courseId: string,
+    @Body() body: { projectUrl?: string; projectNote?: string },
+  ) {
+    return this.certs.issueForCourse(user, courseId, body);
   }
 }
+

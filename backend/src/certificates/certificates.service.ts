@@ -1,26 +1,51 @@
-import { Injectable } from '@nestjs/common';
-import { CreateCertificateDto } from './dto/create-certificate.dto';
-import { UpdateCertificateDto } from './dto/update-certificate.dto';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Certificate } from './entities/certificate.entity';
+import { Course } from '../courses/entities/course.entity';
+import { Progress } from '../progress/entities/progress.entity';
+import { User } from '../users/entities/user.entity';
+import { LearningMode } from '../common/enums';
 
 @Injectable()
 export class CertificatesService {
-  create(createCertificateDto: CreateCertificateDto) {
-    return 'This action adds a new certificate';
+  constructor(
+    @InjectRepository(Certificate) private readonly certs: Repository<Certificate>,
+    @InjectRepository(Course) private readonly courses: Repository<Course>,
+    @InjectRepository(Progress) private readonly progress: Repository<Progress>,
+  ) {}
+
+  async myCertificates(user: User) {
+    return this.certs.find({ where: { utilisateur: { id: user.id } }, order: { dateDelivrance: 'DESC' } });
   }
 
-  findAll() {
-    return `This action returns all certificates`;
-  }
+  async issueForCourse(user: User, courseId: string, body: { projectUrl?: string; projectNote?: string }) {
+    if (user.modeApprentissage !== LearningMode.GUIDED) {
+      throw new BadRequestException("Certificat disponible uniquement en parcours guidé.");
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} certificate`;
-  }
+    const course = await this.courses.findOne({ where: { id: courseId } });
+    if (!course) throw new NotFoundException('Cours introuvable.');
 
-  update(id: number, updateCertificateDto: UpdateCertificateDto) {
-    return `This action updates a #${id} certificate`;
-  }
+    const prog = await this.progress.findOne({ where: { utilisateur: { id: user.id }, cours: { id: courseId } } });
+    if (!prog || prog.pourcentage < 100) {
+      throw new BadRequestException('Terminez tous les modules du cours avant le certificat.');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} certificate`;
+    const existing = await this.certs.findOne({ where: { utilisateur: { id: user.id }, cours: { id: courseId } } });
+    if (existing) return existing;
+
+    const cert = this.certs.create({
+      utilisateur: user,
+      cours: course,
+    });
+    const saved = await this.certs.save(cert);
+    return {
+      ...saved,
+      meta: {
+        projectUrl: body.projectUrl ?? null,
+        projectNote: body.projectNote ?? null,
+      },
+    };
   }
 }
