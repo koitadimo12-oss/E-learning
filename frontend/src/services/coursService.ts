@@ -1150,3 +1150,5 @@ function genererCoursSupplementaires(debutId: number, totalFinal: number): Cours
 }
 
 export const listeCours: Cours[] = [...coursBase, ...genererCoursSupplementaires(25, 100)];
+
+export { chargerCours, getCoursCache, getCoursParId, creerCours, supprimerCours, modifierCours } from "./coursApi";

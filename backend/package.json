@@ -10,6 +10,13 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
+    "port:free": "powershell -ExecutionPolicy Bypass -File scripts/kill-port.ps1",
+    "dev": "npm run port:free && npm run start:dev",
+    "db:create": "node scripts/create-database.mjs",
+    "db:check": "node scripts/list-tables.mjs",
+    "db:migrate-3306": "node scripts/migrate-to-3306.mjs",
+    "db:seed-books": "node scripts/seed-books.mjs",
+    "db:update-pdfs": "node scripts/update-book-pdfs.mjs",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -20,6 +27,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@mistralai/mistralai": "^1.15.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",

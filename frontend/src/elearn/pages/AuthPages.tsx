@@ -10,11 +10,11 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      login(email, password);
-      const u = authService.currentUser();
+      await login(email, password);
+      const u = await authService.currentUser();
       if (u?.role === "admin") navigate("/admin/dashboard");
       else if (u?.role === "formateur") navigate("/formateur/dashboard");
       else navigate("/dashboard");

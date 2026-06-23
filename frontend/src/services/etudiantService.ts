@@ -1,4 +1,21 @@
-import { getLabelEcoleCanonique } from "./ecoleService";
+import { authApi, type ApiUser } from "./authApi";
+import { apiGet, apiPatch, getAuthToken } from "./apiClient";
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  ÉTUDIANT — logique métier + appels API
+ * ═══════════════════════════════════════════════════════════════
+ *
+ *  Ce service fait le pont entre les pages React et le backend :
+ *
+ *  Inscription.tsx       → inscriptionEtudiant()  → POST /auth/register
+ *  Connexion.tsx         → connexionEtudiant()    → POST /auth/login
+ *  App.tsx               → getSessionEtudiant()   → GET  /auth/me + GET /progress
+ *  DetailCours.tsx       → mettreAJourProgression → PATCH /progress/:courseId
+ *  DashboardAdmin        → listeEtudiants()       → GET  /users
+ *
+ *  Les données utilisateur sont en BDD — seul le token JWT est en sessionStorage.
+ */
 
 export type NiveauEtude = "Débutant" | "Intermédiaire" | "Avancé";
 export type ModeApprentissage = "parcours-guide" | "cours-libre";
@@ -13,22 +30,10 @@ export type ParcoursGuide =
   | "ui-ux"
   | "gestion-projet";
 
-function normaliserNiveauEtude(value: unknown): NiveauEtude {
-  if (value === "Débutant" || value === "Intermédiaire" || value === "Avancé") return value;
-  if (value === "Lycée") return "Débutant";
-  if (value === "Université") return "Intermédiaire";
-  if (value === "Autre") return "Avancé";
-  return "Intermédiaire";
-}
-
 export interface Etudiant {
-  id: number;
+  id: string;
   nom: string;
   email: string;
-  motDePasse: string;
-  /** id canonique (liste contrôlée) */
-  ecoleId: string;
-  ecoleCanonique: string;
   niveauEtude: NiveauEtude;
   modeApprentissage: ModeApprentissage;
   parcoursGuideChoisi?: ParcoursGuide;
@@ -48,299 +53,223 @@ export interface Etudiant {
   lastStreakDate?: string;
 }
 
-const ETUDIANTS_KEY = "knd_etudiants";
-const SESSION_KEY = "knd_session_etudiant";
+type ApiProgress = {
+  id: string;
+  pourcentage: number;
+  leconsValidees?: string[];
+  estTermine?: boolean;
+  termineLe?: string | null;
+  cours?: { id: number };
+};
 
-function normaliserEtudiantBrut(e: unknown): Etudiant | null {
-  if (!e || typeof e !== "object") return null;
-  const o = e as Record<string, unknown>;
-  if (typeof o.id !== "number" || typeof o.nom !== "string" || typeof o.email !== "string" || typeof o.motDePasse !== "string")
-    return null;
-
-  const coursSuivis = Array.isArray(o.coursSuivis) ? o.coursSuivis : [];
-  const modeApprentissage: ModeApprentissage =
-    o.modeApprentissage === "cours-libre" ? "cours-libre" : "parcours-guide";
-  const parcoursGuideChoisi =
-    typeof o.parcoursGuideChoisi === "string" ? (o.parcoursGuideChoisi as ParcoursGuide) : undefined;
-
-  return {
-    id: o.id,
-    nom: o.nom,
-    email: o.email,
-    motDePasse: o.motDePasse,
-    ecoleId: typeof o.ecoleId === "string" ? o.ecoleId : "unipro",
-    ecoleCanonique: typeof o.ecoleCanonique === "string" ? o.ecoleCanonique : "Unipro",
-    niveauEtude: normaliserNiveauEtude(o.niveauEtude),
-    modeApprentissage,
-    parcoursGuideChoisi,
-    onboardingApprentissageTermine: o.onboardingApprentissageTermine === true,
-    projetParcoursValide: o.projetParcoursValide === true,
-    dateValidationParcours: typeof o.dateValidationParcours === "string" ? o.dateValidationParcours : undefined,
-    coursSuivis: coursSuivis
-      .filter((item) => item && typeof item === "object")
-      .map((item) => {
-        const suivi = item as Record<string, unknown>;
-        const idCours = typeof suivi.idCours === "number" ? suivi.idCours : 0;
-        const progression = typeof suivi.progression === "number" ? suivi.progression : 0;
-        const chapitresCompletes = Array.isArray(suivi.chapitresCompletes)
-          ? (suivi.chapitresCompletes as number[])
-          : [];
-        return {
-          idCours,
-          progression,
-          chapitresCompletes,
-          projetFinalValide: suivi.projetFinalValide === true,
-          dateValidationProjet:
-            typeof suivi.dateValidationProjet === "string" ? suivi.dateValidationProjet : undefined,
-        };
-      }),
-    points: typeof o.points === "number" ? o.points : 0,
-    badges: Array.isArray(o.badges) ? (o.badges as string[]) : [],
-    streak: typeof o.streak === "number" ? o.streak : 0,
-    lastStreakDate: typeof o.lastStreakDate === "string" ? o.lastStreakDate : undefined,
-  };
+function mapModeFromApi(mode?: string): ModeApprentissage {
+  return mode === "guide" ? "parcours-guide" : "cours-libre";
 }
 
-const etudiantsParDefaut: Etudiant[] = [
-  {
-    id: 1,
-    nom: "Mamadou",
-    email: "mamadou@example.com",
-    motDePasse: "123456",
-    ecoleId: "unipro",
-    ecoleCanonique: "Unipro",
-    niveauEtude: "Intermédiaire",
-    modeApprentissage: "parcours-guide",
-    parcoursGuideChoisi: "developpement-web",
-    onboardingApprentissageTermine: true,
-    projetParcoursValide: false,
-    coursSuivis: [
-      { idCours: 1, progression: 60, projetFinalValide: false },
-      { idCours: 2, progression: 0, projetFinalValide: false },
-      { idCours: 3, progression: 0, projetFinalValide: false },
-      { idCours: 4, progression: 0, projetFinalValide: false },
-    ],
-    points: 120,
-    badges: ["Premier pas"],
-    streak: 3,
-    lastStreakDate: new Date().toDateString(),
-  },
-];
+function mapModeToApi(mode: ModeApprentissage): string {
+  return mode === "parcours-guide" ? "guide" : "libre";
+}
 
-function chargerEtudiants(): Etudiant[] {
-  if (typeof window === "undefined") return etudiantsParDefaut;
-  const brut = localStorage.getItem(ETUDIANTS_KEY);
-  if (!brut) return etudiantsParDefaut;
+function normaliserNiveau(value?: string): NiveauEtude {
+  if (value === "Débutant" || value === "Intermédiaire" || value === "Avancé") return value;
+  return "Intermédiaire";
+}
+
+function mapProgressions(rows: ApiProgress[]) {
+  return rows
+    .filter((p) => p.cours?.id != null)
+    .map((p) => ({
+      idCours: p.cours!.id,
+      progression: p.pourcentage ?? 0,
+      chapitresCompletes: (p.leconsValidees ?? []).map(Number).filter((n) => !Number.isNaN(n)),
+      projetFinalValide: p.estTermine === true,
+      dateValidationProjet: p.termineLe ?? undefined,
+    }));
+}
+
+async function fetchProgressions(): Promise<ApiProgress[]> {
+  if (!getAuthToken()) return [];
   try {
-    const donnees = JSON.parse(brut) as unknown[];
-    if (!Array.isArray(donnees)) return etudiantsParDefaut;
-    const out: Etudiant[] = [];
-    for (const item of donnees) {
-      const n = normaliserEtudiantBrut(item);
-      if (n) out.push(n);
-    }
-    return out.length ? out : etudiantsParDefaut;
+    // GET /progress — backend/src/progress/progress.controller.ts
+    return await apiGet<ApiProgress[]>("/progress");
   } catch {
-    return etudiantsParDefaut;
+    return [];
   }
 }
 
-function sauvegarderEtudiants(etudiants: Etudiant[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(ETUDIANTS_KEY, JSON.stringify(etudiants));
+export function mapApiUserToEtudiant(user: ApiUser, progressions: ApiProgress[] = []): Etudiant {
+  return {
+    id: user.id,
+    nom: user.nom,
+    email: user.email,
+    niveauEtude: normaliserNiveau(user.niveauEtude),
+    modeApprentissage: mapModeFromApi(user.modeApprentissage),
+    parcoursGuideChoisi: user.parcoursGuideChoisi as ParcoursGuide | undefined,
+    onboardingApprentissageTermine: user.onboardingApprentissageTermine === true,
+    projetParcoursValide: false,
+    coursSuivis: mapProgressions(progressions),
+    points: user.xp ?? 0,
+    badges: user.badges ?? [],
+    streak: user.streak ?? 0,
+    lastStreakDate: user.lastStreakDate,
+  };
 }
 
-let etudiants: Etudiant[] = chargerEtudiants();
-
-export function listeEtudiants(): Etudiant[] {
-  etudiants = chargerEtudiants();
-  return [...etudiants];
+async function buildEtudiantFromSession(): Promise<Etudiant | null> {
+  if (!getAuthToken()) return null;
+  try {
+    const user = await authApi.me();
+    if (user.role === "admin") return null;
+    const progressions = await fetchProgressions();
+    return mapApiUserToEtudiant(user, progressions);
+  } catch {
+    authApi.logout();
+    return null;
+  }
 }
 
-export function inscriptionEtudiant(
+export async function listeEtudiants(): Promise<Etudiant[]> {
+  try {
+    const users = await authApi.listUsers();
+    return users
+      .filter((u) => u.role === "etudiant")
+      .map((u) => mapApiUserToEtudiant(u));
+  } catch {
+    return [];
+  }
+}
+
+export async function inscriptionEtudiant(
   nom: string,
   email: string,
   motDePasse: string,
-  ecoleId: string,
-  niveauEtude: NiveauEtude
-): Etudiant {
-  etudiants = chargerEtudiants();
-  const existant = etudiants.find((e) => e.email.toLowerCase() === email.toLowerCase());
-  if (existant) return existant;
-
-  const newEtudiant: Etudiant = {
-    id: Date.now(),
+  niveauEtude: NiveauEtude,
+): Promise<Etudiant> {
+  // Envoie les données au backend → enregistrement en table "user"
+  const res = await authApi.register({
     nom,
     email,
     motDePasse,
-    ecoleId,
-    ecoleCanonique: getLabelEcoleCanonique(ecoleId),
+    role: "etudiant",
     niveauEtude,
-    modeApprentissage: "cours-libre",
-    onboardingApprentissageTermine: false,
-    projetParcoursValide: false,
-    coursSuivis: [],
-    points: 0,
-    badges: [],
-    streak: 0,
-  };
-  etudiants.push(newEtudiant);
-  sauvegarderEtudiants(etudiants);
-  return newEtudiant;
+  });
+  return mapApiUserToEtudiant(res.user);
 }
 
-export function configurerApprentissageEtudiant(
-  idEtudiant: number,
+export async function configurerApprentissageEtudiant(
+  idEtudiant: string,
   modeApprentissage: ModeApprentissage,
-  parcoursGuideChoisi?: ParcoursGuide
+  parcoursGuideChoisi?: ParcoursGuide,
+): Promise<Etudiant | null> {
+  const user = await authApi.updateProfile({
+    modeApprentissage: mapModeToApi(modeApprentissage),
+    parcoursGuideChoisi: modeApprentissage === "parcours-guide" ? parcoursGuideChoisi : undefined,
+    onboardingApprentissageTermine: true,
+  });
+  if (user.id !== idEtudiant) return null;
+  const progressions = await fetchProgressions();
+  return mapApiUserToEtudiant(user, progressions);
+}
+
+export async function connexionEtudiant(email: string, motDePasse: string): Promise<Etudiant | null> {
+  const res = await authApi.login(email, motDePasse);
+  if (res.user.role === "admin") {
+    authApi.logout();
+    return null;
+  }
+  const progressions = await fetchProgressions();
+  return mapApiUserToEtudiant(res.user, progressions);
+}
+
+export async function getEtudiant(_id: string): Promise<Etudiant | undefined> {
+  const etudiant = await buildEtudiantFromSession();
+  return etudiant ?? undefined;
+}
+
+async function patchProgress(
+  idCours: number,
+  patch: { pourcentage?: number; leconsValidees?: string[]; estTermine?: boolean; scoreQuiz?: number },
 ) {
-  etudiants = chargerEtudiants();
-  const etudiant = etudiants.find((e) => e.id === idEtudiant);
-  if (!etudiant) return null;
-  etudiant.modeApprentissage = modeApprentissage;
-  etudiant.parcoursGuideChoisi = modeApprentissage === "parcours-guide" ? parcoursGuideChoisi : undefined;
-  etudiant.onboardingApprentissageTermine = true;
-  sauvegarderEtudiants(etudiants);
-  return etudiant;
+  // PATCH /progress/:courseId — met à jour la progression en BDD
+  await apiPatch(`/progress/${idCours}`, patch);
 }
 
-export function connexionEtudiant(email: string, motDePasse: string): Etudiant | null {
-  etudiants = chargerEtudiants();
-  return etudiants.find((e) => e.email === email && e.motDePasse === motDePasse) ?? null;
-}
-
-export function getEtudiant(id: number): Etudiant | undefined {
-  etudiants = chargerEtudiants();
-  return etudiants.find((e) => e.id === id);
-}
-
-export function mettreAJourProgression(idEtudiant: number, idCours: number, progression: number) {
-  etudiants = chargerEtudiants();
-  const etudiant = etudiants.find((e) => e.id === idEtudiant);
-  if (!etudiant) return;
-  const coursSuivi = etudiant.coursSuivis.find((cs) => cs.idCours === idCours);
+export async function mettreAJourProgression(_idEtudiant: string, idCours: number, progression: number) {
+  if (!getAuthToken()) return;
   const progressionSecurisee = Math.max(0, Math.min(100, progression));
-
-  if (coursSuivi) coursSuivi.progression = Math.max(coursSuivi.progression, progressionSecurisee);
-  else
-    etudiant.coursSuivis.push({
-      idCours,
-      progression: progressionSecurisee,
-      chapitresCompletes: [],
-      projetFinalValide: false,
-    });
-
-  sauvegarderEtudiants(etudiants);
+  await patchProgress(idCours, { pourcentage: progressionSecurisee });
 }
 
-export function mettreAJourChapitresCompletes(idEtudiant: number, idCours: number, idsChapitres: number[]) {
-  etudiants = chargerEtudiants();
-  const etudiant = etudiants.find((e) => e.id === idEtudiant);
-  if (!etudiant) return;
+export async function mettreAJourChapitresCompletes(
+  _idEtudiant: string,
+  idCours: number,
+  idsChapitres: number[],
+) {
+  if (!getAuthToken()) return;
   const uniques = [...new Set(idsChapitres)].sort((a, b) => a - b);
-  let suivi = etudiant.coursSuivis.find((cs) => cs.idCours === idCours);
-  if (!suivi) {
-    suivi = { idCours, progression: 0, chapitresCompletes: uniques, projetFinalValide: false };
-    etudiant.coursSuivis.push(suivi);
-  } else {
-    suivi.chapitresCompletes = uniques;
-  }
-  sauvegarderEtudiants(etudiants);
+  const leconsValidees = uniques.map(String);
+  const pourcentage = Math.min(100, Math.round((uniques.length / Math.max(1, uniques.length)) * 100));
+  await patchProgress(idCours, { leconsValidees, pourcentage });
 }
 
-function attribuerPoints(etudiant: Etudiant, pts: number, raison: string) {
-  etudiant.points = (etudiant.points ?? 0) + pts;
-  if (raison === "quiz_reussi") {
-    if (!etudiant.badges.includes("Quiz master") && etudiant.points >= 80) {
-      etudiant.badges.push("Quiz master");
-    }
-  }
-  if (etudiant.points >= 200 && !etudiant.badges.includes("Explorateur")) {
-    etudiant.badges.push("Explorateur");
-  }
+async function attribuerPointsApi(xp: number, badges?: string[]) {
+  const user = await authApi.me();
+  const nextXp = (user.xp ?? 0) + xp;
+  const nextNiveau = Math.max(1, Math.floor(nextXp / 100) + 1);
+  const nextBadges = [...(user.badges ?? [])];
+  if (badges) badges.forEach((b) => { if (!nextBadges.includes(b)) nextBadges.push(b); });
+  if (nextNiveau >= 3 && !nextBadges.includes("🏆 Niveau 3")) nextBadges.push("🏆 Niveau 3");
+  if (nextNiveau >= 5 && !nextBadges.includes("🌟 Niveau 5")) nextBadges.push("🌟 Niveau 5");
+  if (nextXp >= 80 && !nextBadges.includes("Quiz master")) nextBadges.push("Quiz master");
+  if (nextXp >= 200 && !nextBadges.includes("Explorateur")) nextBadges.push("Explorateur");
+  await authApi.updateProfile({ xp: nextXp, niveau: nextNiveau, badges: nextBadges });
 }
 
-/** Appelé quand le quiz est validé (≥ 2/3). */
-export function recompenserQuizReussi(idEtudiant: number, idCours: number) {
-  etudiants = chargerEtudiants();
-  const etudiant = etudiants.find((e) => e.id === idEtudiant);
-  if (!etudiant) return;
-  attribuerPoints(etudiant, 25, "quiz_reussi");
-  const coursSuivi = etudiant.coursSuivis.find((cs) => cs.idCours === idCours);
-  if (coursSuivi) coursSuivi.progression = 100;
-  else etudiant.coursSuivis.push({ idCours, progression: 100, chapitresCompletes: [], projetFinalValide: false });
-  sauvegarderEtudiants(etudiants);
+export async function recompenserQuizReussi(_idEtudiant: string, idCours: number) {
+  if (!getAuthToken()) return;
+  await patchProgress(idCours, { pourcentage: 100, estTermine: false, scoreQuiz: 100 });
+  await attribuerPointsApi(25, ["Quiz master"]);
 }
 
-export function validerProjetFinal(idEtudiant: number, idCours: number) {
-  etudiants = chargerEtudiants();
-  const etudiant = etudiants.find((e) => e.id === idEtudiant);
-  if (!etudiant) return false;
+export async function ajouterXpMiniJeu(_idEtudiant: string, xp: number) {
+  if (!getAuthToken() || xp <= 0) return;
+  await attribuerPointsApi(xp);
+}
 
-  const coursSuivi = etudiant.coursSuivis.find((cs) => cs.idCours === idCours);
-  if (!coursSuivi || coursSuivi.progression < 100) return false;
-
-  coursSuivi.projetFinalValide = true;
-  coursSuivi.dateValidationProjet = new Date().toISOString();
-  attribuerPoints(etudiant, 40, "projet_final");
-  sauvegarderEtudiants(etudiants);
+export async function validerProjetFinal(_idEtudiant: string, idCours: number): Promise<boolean> {
+  if (!getAuthToken()) return false;
+  const rows = await fetchProgressions();
+  const suivi = rows.find((p) => p.cours?.id === idCours);
+  if (!suivi || (suivi.pourcentage ?? 0) < 100) return false;
+  await patchProgress(idCours, { estTermine: true, pourcentage: 100 });
+  await attribuerPointsApi(40);
   return true;
 }
 
-export function validerProjetParcours(idEtudiant: number) {
-  etudiants = chargerEtudiants();
-  const etudiant = etudiants.find((e) => e.id === idEtudiant);
-  if (!etudiant) return false;
-  etudiant.projetParcoursValide = true;
-  etudiant.dateValidationParcours = new Date().toISOString();
-  attribuerPoints(etudiant, 100, "projet_parcours");
-  sauvegarderEtudiants(etudiants);
+export async function validerProjetParcours(_idEtudiant: string): Promise<boolean> {
+  if (!getAuthToken()) return false;
+  await attribuerPointsApi(100);
   return true;
 }
 
-export function toucherStreak(idEtudiant: number) {
-  etudiants = chargerEtudiants();
-  const e = etudiants.find((x) => x.id === idEtudiant);
-  if (!e) return;
+export async function toucherStreak(_idEtudiant: string) {
+  if (!getAuthToken()) return;
+  const user = await authApi.me();
   const today = new Date().toDateString();
-  const last = e.lastStreakDate;
-  if (last === today) {
-    sauvegarderEtudiants(etudiants);
-    return;
-  }
+  const last = user.lastStreakDate;
+  if (last === today) return;
+
   const y = new Date();
   y.setDate(y.getDate() - 1);
   const hier = y.toDateString();
-  if (last === hier) {
-    e.streak = (e.streak ?? 0) + 1;
-  } else {
-    e.streak = 1;
-  }
-  e.lastStreakDate = today;
-  sauvegarderEtudiants(etudiants);
+  const streak = last === hier ? (user.streak ?? 0) + 1 : 1;
+  await authApi.updateProfile({ streak, lastStreakDate: today });
 }
 
-export function setSessionEtudiant(etudiant: Etudiant | null) {
-  if (typeof window === "undefined") return;
-  if (!etudiant) {
-    localStorage.removeItem(SESSION_KEY);
-    return;
-  }
-  localStorage.setItem(SESSION_KEY, JSON.stringify(etudiant));
+export function setSessionEtudiant(_etudiant: Etudiant | null) {
+  // Session gérée par le token JWT — pas de données en localStorage
 }
 
-export function getSessionEtudiant(): Etudiant | null {
-  if (typeof window === "undefined") return null;
-  const brut = localStorage.getItem(SESSION_KEY);
-  if (!brut) return null;
-  try {
-    const session = JSON.parse(brut) as unknown;
-    const parsed = normaliserEtudiantBrut(session);
-    if (!parsed) return null;
-    etudiants = chargerEtudiants();
-    const frais = etudiants.find((e) => e.id === parsed.id);
-    return frais ?? parsed;
-  } catch {
-    return null;
-  }
+export async function getSessionEtudiant(): Promise<Etudiant | null> {
+  return buildEtudiantFromSession();
 }

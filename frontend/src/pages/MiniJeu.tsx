@@ -4,17 +4,37 @@ import EnteteRetour from "../composants/EnteteRetour";
 import PiedPage from "../composants/PiedPage";
 import { useLanguage } from "../elearn/i18n/LanguageContext";
 import { getAiMiniGame, type AiGameResponse } from "../services/aiMiniGameApi";
+import { getAiAdvice, type AiAdviceResponse } from "../services/aiServiceApi";
+import { useLocation } from "react-router-dom";
+import { ajouterXpMiniJeu } from "../services/etudiantService";
 
 export default function MiniJeu(props: any) {
   const { etudiant } = props;
   const navigate = useNavigate();
   const { lang } = useLanguage();
+  const location = useLocation();
+  const initialTopic = (location.state as any)?.topic || "JavaScript";
 
-  const [topic, setTopic] = useState("JavaScript");
+  const [topic, setTopic] = useState(initialTopic);
   const [loading, setLoading] = useState(false);
   const [game, setGame] = useState<AiGameResponse | null>(null);
-  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; score: number; total: number; xp: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [aiAdvice, setAiAdvice] = useState<AiAdviceResponse | null>(null);
+  const [aiAdviceLoading, setAiAdviceLoading] = useState(false);
+  const [_gamesPlayed, setGamesPlayed] = useState(0); // games completed in this session
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(() => {
+    const saved = localStorage.getItem('minijeu_cooldown');
+    if (saved) {
+      const ts = parseInt(saved, 10);
+      return ts > Date.now() ? ts : null;
+    }
+    return null;
+  });
+  const [cooldownLeft, setCooldownLeft] = useState(0);
+
+  // Countdown state
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   // Timed quiz state
   const [timerLeft, setTimerLeft] = useState(0);
@@ -49,34 +69,91 @@ export default function MiniJeu(props: any) {
     return () => clearInterval(id);
   }, [timerRunning, timerLeft]);
 
-  // Auto-submit quiz when timer expires
+  // Auto-submit quiz when timer expires → set cooldown
   useEffect(() => {
     if (timerLeft === 0 && timerRunning === false && game?.type === "timed-quiz" && !quizSubmitted && Object.keys(quizAnswers).length > 0) {
       submitQuiz();
     }
+    // Cooldown when time runs out with no answers
+    if (timerLeft === 0 && timerRunning === false && game?.type === "timed-quiz" && !quizSubmitted && Object.keys(quizAnswers).length === 0) {
+      const until = Date.now() + 30 * 60 * 1000; // 30 min cooldown
+      setCooldownUntil(until);
+      localStorage.setItem('minijeu_cooldown', String(until));
+    }
   }, [timerLeft, timerRunning]);
+
+  // Cooldown countdown
+  useEffect(() => {
+    if (!cooldownUntil) return;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
+      setCooldownLeft(left);
+      if (left === 0) {
+        setCooldownUntil(null);
+        localStorage.removeItem('minijeu_cooldown');
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
 
   const generateGame = useCallback(async () => {
     setLoading(true);
     setError(null);
     setResult(null);
+    setAiAdvice(null);
     setQuizAnswers({});
     setQuizSubmitted(false);
     setTimerRunning(false);
     try {
       const g = await getAiMiniGame({ lang, topic: topic.trim() || "apprentissage", lastScore, level });
       setGame(g);
-      // Start timer for timed-quiz
-      if (g.type === "timed-quiz" && g.payload?.seconds) {
-        setTimerLeft(g.payload.seconds);
-        setTimerRunning(true);
-      }
+      
+      // Start countdown before game
+      setCountdown(3);
     } catch (e: any) {
       setError(e?.message ?? "Erreur mini-jeu");
-    } finally {
       setLoading(false);
     }
   }, [lang, topic, lastScore, level]);
+
+  // Countdown effect
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown > 0) {
+      const id = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(id);
+    } else {
+      const id = setTimeout(() => {
+        setCountdown(null);
+        setLoading(false);
+        // Start timer for timed-quiz after countdown
+        if (game?.type === "timed-quiz" && game.payload?.seconds) {
+          setTimerLeft(game.payload.seconds);
+          setTimerRunning(true);
+        }
+      }, 800);
+      return () => clearTimeout(id);
+    }
+  }, [countdown, game]);
+
+  const fetchAiAdvice = async (score: number, total: number) => {
+    setAiAdviceLoading(true);
+    try {
+      const pct = Math.round((score / total) * 100);
+      const res = await getAiAdvice({
+        lastScore: pct,
+        topic: game?.title || topic,
+        lang
+      });
+      setAiAdvice(res);
+    } catch (e) {
+      console.error("AI Advice error", e);
+    } finally {
+      setAiAdviceLoading(false);
+    }
+  };
 
   const submitQuiz = useCallback(() => {
     if (!game?.payload?.questions) return;
@@ -88,11 +165,22 @@ export default function MiniJeu(props: any) {
       if (quizAnswers[i] === questions[i].correctIndex) correct++;
     }
     const pct = Math.round((correct / questions.length) * 100);
+    const xpGagne = pct >= 60 ? game.reward.xp : 0;
+    
+    if (xpGagne > 0 && etudiant) {
+      void ajouterXpMiniJeu(etudiant.id, xpGagne);
+    }
+
     setResult({
       ok: pct >= 60,
-      message: `${correct}/${questions.length} bonnes réponses (${pct}%) — ${pct >= 60 ? `Bravo ! +${game.reward.xp} XP gagnés !` : "Réessayez pour un meilleur score !"}`,
+      score: correct,
+      total: questions.length,
+      xp: xpGagne
     });
-  }, [game, quizAnswers]);
+
+    fetchAiAdvice(correct, questions.length);
+    setGamesPlayed(g => g + 1);
+  }, [game, quizAnswers, etudiant, lang]);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -148,7 +236,15 @@ export default function MiniJeu(props: any) {
                     <p className="mt-1 text-xl font-black">{game.title}</p>
                   </div>
                   {game.type === "timed-quiz" && timerRunning && (
-                    <div className={`text-2xl font-black tabular-nums ${timerLeft <= 10 ? "text-red-500 animate-pulse" : "text-blue-600 dark:text-blue-400"}`}>
+                    <div
+                      className={`text-2xl font-black tabular-nums transition-colors ${
+                        timerLeft <= 5
+                          ? "text-red-500 animate-pulse"
+                          : timerLeft <= 10
+                          ? "text-orange-500"
+                          : "text-blue-600 dark:text-blue-400"
+                      }`}
+                    >
                       ⏱ {formatTime(timerLeft)}
                     </div>
                   )}
@@ -228,14 +324,13 @@ export default function MiniJeu(props: any) {
                         key={c}
                         type="button"
                         disabled={!!result}
-                        onClick={() =>
-                          setResult({
-                            ok: c === game.payload?.correct,
-                            message: c === game.payload?.correct
-                              ? `✅ Correct ! +${game.reward.xp} XP gagnés !`
-                              : `❌ Incorrect. La bonne réponse était : ${game.payload?.correct}`,
-                          })
-                        }
+                        onClick={() => {
+                          const isOk = c === game.payload?.correct;
+                          const xp = isOk ? game.reward.xp : 0;
+                          if (xp > 0 && etudiant) void ajouterXpMiniJeu(etudiant.id, xp);
+                          setResult({ ok: isOk, score: isOk ? 1 : 0, total: 1, xp });
+                          fetchAiAdvice(isOk ? 1 : 0, 1);
+                        }}
                         className={`px-4 py-3 rounded-xl border text-sm font-bold transition ${
                           result
                             ? c === game.payload?.correct
@@ -262,14 +357,13 @@ export default function MiniJeu(props: any) {
                         key={o}
                         type="button"
                         disabled={!!result}
-                        onClick={() =>
-                          setResult({
-                            ok: idx === game.payload?.correctIndex,
-                            message: idx === game.payload?.correctIndex
-                              ? `✅ Excellent ! +${game.reward.xp} XP gagnés !`
-                              : `❌ Pas tout à fait. La bonne réponse était : ${(game.payload?.options ?? [])[game.payload?.correctIndex]}`,
-                          })
-                        }
+                        onClick={() => {
+                          const isOk = idx === game.payload?.correctIndex;
+                          const xp = isOk ? game.reward.xp : 0;
+                          if (xp > 0 && etudiant) void ajouterXpMiniJeu(etudiant.id, xp);
+                          setResult({ ok: isOk, score: isOk ? 1 : 0, total: 1, xp });
+                          fetchAiAdvice(isOk ? 1 : 0, 1);
+                        }}
                         className={`px-4 py-3 rounded-xl border text-sm font-bold transition ${
                           result
                             ? idx === game.payload?.correctIndex
@@ -288,27 +382,106 @@ export default function MiniJeu(props: any) {
               {/* Result */}
               {result && (
                 <div
-                  className={`mt-5 rounded-2xl border p-5 ${
+                  className={`mt-8 rounded-3xl border-2 p-8 shadow-2xl transition-all animate-in zoom-in-95 duration-500 ${
                     result.ok
-                      ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30"
-                      : "border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30"
+                      ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40"
+                      : "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40"
                   }`}
                 >
-                  <p className="font-bold text-lg">{result.ok ? "🎉" : "💪"} {result.message}</p>
-                  <div className="mt-4 flex gap-3">
+                  <div className="text-center">
+                    <p className="text-6xl mb-4">{result.ok ? "🎉" : "💪"}</p>
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                      {result.ok ? "Magnifique !" : "Pas mal !"}
+                    </h3>
+                    <p className="mt-2 text-slate-600 dark:text-slate-400 font-medium">
+                      Score final : <span className="font-bold text-xl">{result.score} / {result.total}</span>
+                    </p>
+                    {result.xp > 0 && (
+                      <div className="mt-4 inline-block px-6 py-2 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/30 animate-bounce">
+                        +{result.xp} XP
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Feedback */}
+                  <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-800">
+                     <div className="flex items-center gap-3 mb-4">
+                        <span className="text-2xl">🤖</span>
+                        <h4 className="font-black text-lg uppercase tracking-wider text-slate-500">Analyse de Mistral AI</h4>
+                     </div>
+                     
+                     {aiAdviceLoading ? (
+                       <div className="flex items-center gap-3 text-blue-600 animate-pulse font-bold">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-ping"></div>
+                          Génération de votre feedback personnalisé...
+                       </div>
+                     ) : aiAdvice ? (
+                       <div className="space-y-4">
+                          <p className="text-slate-800 dark:text-slate-200 font-medium leading-relaxed italic">
+                            "{aiAdvice.message}"
+                          </p>
+                          
+                          <div className="grid md:grid-cols-2 gap-4">
+                             {aiAdvice.strengths && aiAdvice.strengths.length > 0 && (
+                               <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+                                  <p className="text-xs font-black text-emerald-600 uppercase mb-2">Points forts</p>
+                                  <ul className="text-sm space-y-1">
+                                    {aiAdvice.strengths.map((s, i) => <li key={i}>✅ {s}</li>)}
+                                  </ul>
+                                </div>
+                             )}
+                             {aiAdvice.actions && aiAdvice.actions.length > 0 && (
+                               <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                                  <p className="text-xs font-black text-blue-600 uppercase mb-2">Conseils</p>
+                                  <ul className="text-sm space-y-1">
+                                    {aiAdvice.actions.map((a, i) => <li key={i}>🎯 {a}</li>)}
+                                  </ul>
+                                </div>
+                             )}
+                          </div>
+
+                          {aiAdvice.recommendedCourses && aiAdvice.recommendedCourses.length > 0 && (
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
+                               <p className="text-xs font-black text-indigo-600 uppercase mb-2">Prochaines étapes</p>
+                               <div className="space-y-2">
+                                  {aiAdvice.recommendedCourses.map((c, i) => (
+                                    <div key={i}>
+                                      <p className="text-sm font-bold">{c.title}</p>
+                                      <p className="text-xs text-slate-500">{c.reason}</p>
+                                    </div>
+                                  ))}
+                               </div>
+                            </div>
+                          )}
+                       </div>
+                     ) : (
+                       <p className="text-sm text-slate-500 italic">Analyse indisponible pour le moment.</p>
+                     )}
+                  </div>
+
+                  <div className="mt-8 flex flex-wrap gap-4 justify-center">
                     <button
                       type="button"
                       onClick={generateGame}
-                      className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition"
+                      className="px-8 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30 transition-all active:scale-95"
                     >
-                      🔄 Nouveau défi
+                      🔄 Rejouer
                     </button>
+                    {game.type === "timed-quiz" && (
+                      <button
+                        type="button"
+                        onClick={() => setQuizSubmitted(true)}
+                        className="px-8 py-3 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 font-bold transition-all"
+                      >
+                        📖 Voir la correction
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => navigate("/tableau-bord")}
-                      className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold transition"
+                      className="px-8 py-3 rounded-2xl bg-slate-900 text-white font-bold transition-all"
                     >
-                      Retour dashboard
+                      Continuer l'apprentissage
                     </button>
                   </div>
                 </div>
@@ -317,6 +490,36 @@ export default function MiniJeu(props: any) {
           )}
         </div>
       </section>
+
+      {/* Countdown Overlay */}
+      {countdown !== null && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-xl">
+           <div className="text-center animate-in zoom-in-50 duration-300">
+              <p className="text-9xl font-black text-white drop-shadow-2xl">
+                {countdown === 0 ? "GO !" : countdown}
+              </p>
+           </div>
+        </div>
+      )}
+
+      {/* Cooldown Overlay */}
+      {cooldownUntil && cooldownLeft > 0 && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl">
+          <div className="text-center max-w-sm px-8 py-12 rounded-3xl bg-slate-900 border border-white/10 shadow-2xl">
+            <p className="text-6xl mb-4">⏳</p>
+            <h2 className="text-2xl font-black text-white mb-2">Temps écoulé !</h2>
+            <p className="text-slate-400 mb-6">Vous n'avez pas répondu. Revenez dans :</p>
+            <p className="text-5xl font-black text-orange-400 font-mono">
+              {Math.floor(cooldownLeft / 60).toString().padStart(2,'0')}:{(cooldownLeft % 60).toString().padStart(2,'0')}
+            </p>
+            <p className="text-slate-500 text-sm mt-4">Prochain défi dans {Math.ceil(cooldownLeft / 60)} min.</p>
+            <button onClick={() => navigate("/tableau-bord")}
+              className="mt-8 px-8 py-3 rounded-2xl bg-white/10 text-white font-bold hover:bg-white/20 transition">
+              Retour au tableau de bord
+            </button>
+          </div>
+        </div>
+      )}
 
       <PiedPage />
     </div>

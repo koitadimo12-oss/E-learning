@@ -20,19 +20,22 @@ export class CertificatesService {
   }
 
   async issueForCourse(user: User, courseId: string, body: { projectUrl?: string; projectNote?: string }) {
+    const id = Number(courseId);
+    if (!Number.isFinite(id)) throw new BadRequestException('Identifiant de cours invalide.');
+
     if (user.modeApprentissage !== LearningMode.GUIDED) {
       throw new BadRequestException("Certificat disponible uniquement en parcours guidé.");
     }
 
-    const course = await this.courses.findOne({ where: { id: courseId } });
+    const course = await this.courses.findOne({ where: { id } });
     if (!course) throw new NotFoundException('Cours introuvable.');
 
-    const prog = await this.progress.findOne({ where: { utilisateur: { id: user.id }, cours: { id: courseId } } });
+    const prog = await this.progress.findOne({ where: { utilisateur: { id: user.id }, cours: { id } } });
     if (!prog || prog.pourcentage < 100) {
       throw new BadRequestException('Terminez tous les modules du cours avant le certificat.');
     }
 
-    const existing = await this.certs.findOne({ where: { utilisateur: { id: user.id }, cours: { id: courseId } } });
+    const existing = await this.certs.findOne({ where: { utilisateur: { id: user.id }, cours: { id } } });
     if (existing) return existing;
 
     const cert = this.certs.create({

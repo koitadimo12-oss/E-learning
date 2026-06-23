@@ -1,18 +1,35 @@
-const SESSION_KEY = "knd_session_admin";
-export const ADMIN_EMAIL = "admin@kaaynioudiang.com";
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  ADMIN — connexion via la même API auth, avec vérif du rôle
+ * ═══════════════════════════════════════════════════════════════
+ *
+ *  AdminConnexion.tsx  →  connexionAdmin()  →  POST /auth/login
+ *  Si role !== "admin" → refusé côté frontend
+ *  DashboardAdmin.tsx  →  accès si token présent
+ */
 
-export function connexionAdmin(motDePasse: string): boolean {
-  if (motDePasse === "AdminKND2026!") {
-    sessionStorage.setItem(SESSION_KEY, "1");
+import { authApi } from "./authApi";
+import { getAuthToken } from "./apiClient";
+
+/** Connexion admin : même route que les étudiants, mais on vérifie role === "admin" */
+export async function connexionAdmin(email: string, motDePasse: string): Promise<boolean> {
+  try {
+    const res = await authApi.login(email, motDePasse);
+    if (res.user.role !== "admin") {
+      authApi.logout();
+      return false;
+    }
     return true;
+  } catch {
+    return false;
   }
-  return false;
 }
 
+/** Vérifie si un token JWT est présent (session admin ou étudiant) */
 export function estAdminConnecte(): boolean {
-  return sessionStorage.getItem(SESSION_KEY) === "1";
+  return !!getAuthToken();
 }
 
 export function deconnexionAdmin() {
-  sessionStorage.removeItem(SESSION_KEY);
+  authApi.logout();
 }

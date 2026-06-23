@@ -1,16 +1,23 @@
-import { IsEnum, IsNotEmpty } from 'class-validator';
-import { ContentLanguage, LearningMode } from '../../common/enums';
+import { IsEnum, IsOptional } from 'class-validator';
+import { LearningMode, NiveauEtude, ParcoursGuide } from '../../common/enums';
 import { ApiProperty } from '@nestjs/swagger';
 
-// DTO pour mettre à jour le profil
 export class UpdateProfileDto {
-  @ApiProperty({ enum: ContentLanguage })
-  @IsNotEmpty()
-  @IsEnum(ContentLanguage)
-  languePreferee!: ContentLanguage;
-
   @ApiProperty({ enum: LearningMode })
-  @IsNotEmpty()
+  @IsOptional()
   @IsEnum(LearningMode)
-  modeApprentissage!: LearningMode;
+  modeApprentissage?: LearningMode;
+
+  @ApiProperty({ enum: NiveauEtude })
+  @IsOptional()
+  @IsEnum(NiveauEtude)
+  niveauEtude?: NiveauEtude;
+
+  @ApiProperty({ enum: ParcoursGuide })
+  @IsOptional()
+  @IsEnum(ParcoursGuide)
+  parcoursGuideChoisi?: ParcoursGuide;
+
+  @IsOptional()
+  onboardingApprentissageTermine?: boolean;
 }

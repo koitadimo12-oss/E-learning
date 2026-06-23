@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { listeCours, type Cours } from "../services/coursService";
+import { getCoursCache, chargerCours } from "../services/coursApi";
+import type { Cours } from "../services/coursService";
 import type { Etudiant } from "../services/etudiantService";
 
 type CoursSuivi = Etudiant["coursSuivis"][number];
@@ -10,6 +11,10 @@ import BarreProgression from "../composants/BarreProgression";
 import PiedPage from "../composants/PiedPage";
 import { getParcoursCoursIds, getParcoursMeta } from "../services/parcoursService";
 import { getEtudiant, validerProjetParcours } from "../services/etudiantService";
+import { getNotesCours } from "../services/stockageLocal";
+import { getAiDailyGame, type DailyGameInfo } from "../services/aiServiceApi";
+import { useEffect } from "react";
+import { apiPost } from "../services/apiClient";
 
 type SectionTableauBord =
   | "overview"
@@ -18,7 +23,8 @@ type SectionTableauBord =
   | "historique"
   | "profil"
   | "quiz"
-  | "contenu";
+  | "contenu"
+  | "mes-notes";
 
 function MenuButton(props: any) {
   const { label, onClick, active = false } = props;
@@ -59,6 +65,27 @@ export default function TableauBord(props: any) {
   const navigate = useNavigate();
   const [sectionActive, setSectionActive] = useState<SectionTableauBord>("overview");
   const [coursSelectionne, setCoursSelectionne] = useState<Cours | null>(null);
+  const [dailyGame, setDailyGame] = useState<DailyGameInfo | null>(null);
+  const [listeCours, setListeCours] = useState<Cours[]>(() => getCoursCache());
+
+  useEffect(() => {
+    chargerCours().then(setListeCours);
+  }, []);
+
+  useEffect(() => {
+    const fetchDaily = async () => {
+      try {
+        const res = await getAiDailyGame({
+          coursesTitles: coursSuivis.map(c => c.titre),
+          level: etudiant.niveau || 1
+        });
+        setDailyGame(res);
+      } catch (e) {
+        console.error("Daily game error", e);
+      }
+    };
+    fetchDaily();
+  }, []);
 
   const coursSuivis: Cours[] = [];
   for (const suivi of etudiant.coursSuivis) {
@@ -135,12 +162,22 @@ export default function TableauBord(props: any) {
 
         {/* Stats grid */}
         <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5">
+            <p className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+               🏆 Niveau {etudiant.niveau || 1}
+            </p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{etudiant.points || 0} XP</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              {etudiant.streak > 0 ? `🔥 ${etudiant.streak} jours consécutifs` : "Commencez une série !"}
+            </p>
+          </div>
+
           <button
             type="button"
             onClick={() => setSectionActive("profil")}
             className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 text-left hover:shadow-md transition"
           >
-            <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Progression</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Progression globale</p>
             <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{moyenne}%</p>
             <div className="mt-3">
               <BarreProgression progression={moyenne} />
@@ -150,18 +187,8 @@ export default function TableauBord(props: any) {
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">Cours suivis</p>
             <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{totalCoursSuivis}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">sur {totalCoursPlateforme} cours disponibles</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">sur {totalCoursPlateforme} cours</p>
           </div>
-
-          <button
-            type="button"
-            onClick={() => navigate("/mini-jeu")}
-            className="bg-gradient-to-br from-orange-500 to-rose-500 rounded-2xl shadow-sm p-5 text-left text-white hover:shadow-lg hover:-translate-y-0.5 transition-all"
-          >
-            <p className="text-xs font-bold uppercase tracking-wider text-orange-100">🎮 Mini-jeu du jour</p>
-            <p className="text-lg font-bold mt-2">Testez vos connaissances</p>
-            <p className="text-xs text-orange-100 mt-1">Gagnez des XP et des badges</p>
-          </button>
 
           <button
             type="button"
@@ -169,10 +196,52 @@ export default function TableauBord(props: any) {
             className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 text-left hover:shadow-md transition"
           >
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">📚 Bibliothèque</p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white mt-2">Explorer les livres</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">25+ ouvrages recommandés par l'IA</p>
+            <p className="text-lg font-bold text-slate-900 dark:text-white mt-2">Livres suggérés</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Contenu recommandé par l'IA</p>
           </button>
         </div>
+
+        {/* Daily Game Widget */}
+        {dailyGame && (
+          <div className="mt-10 bg-white dark:bg-slate-900 rounded-3xl border-2 border-orange-100 dark:border-orange-900/30 overflow-hidden shadow-xl shadow-orange-500/5">
+            <div className="flex flex-col lg:flex-row">
+              <div className="lg:w-1/3 bg-gradient-to-br from-orange-500 to-rose-500 p-8 flex flex-col items-center justify-center text-white text-center">
+                <span className="text-7xl mb-4 animate-bounce">{dailyGame.emoji || "🎮"}</span>
+                <p className="text-sm font-black uppercase tracking-widest opacity-80">Challenge du jour</p>
+                <div className="mt-4 flex gap-1">
+                   {[...Array(3)].map((_, i) => (
+                     <span key={i} className={i < dailyGame.difficulty ? "text-white" : "opacity-30"}>⭐</span>
+                   ))}
+                </div>
+              </div>
+              <div className="flex-1 p-8">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">{dailyGame.title}</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">
+                      {dailyGame.description}
+                    </p>
+                  </div>
+                  <div className="bg-orange-100 dark:bg-orange-900/30 px-4 py-2 rounded-2xl">
+                     <p className="text-orange-600 dark:text-orange-400 font-black">+{dailyGame.xp} XP</p>
+                  </div>
+                </div>
+                
+                <div className="mt-8 flex flex-wrap gap-4 items-center">
+                  <button
+                    onClick={() => navigate("/mini-jeu", { state: { topic: dailyGame.topic } })}
+                    className="px-10 py-4 bg-orange-500 hover:bg-orange-600 text-white font-black text-lg rounded-2xl shadow-lg shadow-orange-500/30 transition-all active:scale-95"
+                  >
+                    Jouer maintenant
+                  </button>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 italic">
+                    Basé sur votre progression en {dailyGame.topic}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-6">Progression des cours</h2>
@@ -234,10 +303,11 @@ export default function TableauBord(props: any) {
                     type="button"
                     disabled={etudiant.projetParcoursValide === true}
                     onClick={() => {
-                      const ok = validerProjetParcours(etudiant.id);
-                      if (!ok) return;
-                      const frais = getEtudiant(etudiant.id);
-                      if (frais && setEtudiant) setEtudiant(frais);
+                      void validerProjetParcours(etudiant.id).then(async (ok) => {
+                        if (!ok) return;
+                        const frais = await getEtudiant(etudiant.id);
+                        if (frais && setEtudiant) setEtudiant(frais);
+                      });
                     }}
                     className="mt-3 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   >
@@ -356,20 +426,24 @@ export default function TableauBord(props: any) {
   function renderRecommandations() {
     return (
       <div>
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Recommandations</h2>
-        <div className="space-y-4">
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Recommandations</h2>
+
+        {/* ── Chatbot IA Recommandation ── */}
+        <RecommandationIA etudiant={etudiant} />
+
+        <div className="space-y-4 mt-8">
           {recommendationsSansDoublon.slice(0, 6).map(({ cours, progression }) => (
             <button
               key={cours.id}
               type="button"
               onClick={() => ouvrirContenuCours(cours)}
-              className="bg-white rounded-xl shadow p-6 text-left w-full hover:shadow-lg transition"
+              className="bg-white dark:bg-slate-900 rounded-xl shadow p-6 text-left w-full hover:shadow-lg transition"
             >
               <div className="flex items-center gap-4">
                 <ImageOuBadge cours={cours} />
                 <div>
-                  <p className="font-bold">{cours.titre}</p>
-                  <p className="text-sm text-gray-500">{cours.instructeur}</p>
+                  <p className="font-bold text-gray-900 dark:text-slate-100">{cours.titre}</p>
+                  <p className="text-sm text-gray-500 dark:text-slate-300">{cours.instructeur}</p>
                 </div>
               </div>
               <div className="mt-4">
@@ -381,6 +455,7 @@ export default function TableauBord(props: any) {
       </div>
     );
   }
+
 
   function renderHistorique() {
     return (
@@ -531,6 +606,34 @@ export default function TableauBord(props: any) {
     );
   }
 
+  function renderMesNotes() {
+    const notesPourCours = coursSuivis.map(c => ({ cours: c, note: getNotesCours(c.id) })).filter(item => item.note.trim() !== "");
+    return (
+      <div>
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Mes notes</h2>
+        {notesPourCours.length === 0 ? (
+          <p className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow text-gray-600 dark:text-slate-300">
+            Vous n’avez pas encore pris de notes sur vos cours.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {notesPourCours.map(({ cours, note }) => (
+                <div key={cours.id} className="bg-white dark:bg-slate-900 rounded-xl shadow p-6 border border-gray-100 dark:border-slate-700">
+                  <div className="flex items-center gap-4 mb-4">
+                    <ImageOuBadge cours={cours} />
+                    <p className="font-bold text-lg">{cours.titre}</p>
+                  </div>
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800/50 p-4 rounded-lg whitespace-pre-wrap text-gray-800 dark:text-slate-200">
+                    {note}
+                  </div>
+                </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function renderSectionActive() {
     if (sectionActive === "overview") return renderOverview();
     if (sectionActive === "mes-cours") return renderMesCours();
@@ -538,6 +641,7 @@ export default function TableauBord(props: any) {
     if (sectionActive === "historique") return renderHistorique();
     if (sectionActive === "profil") return renderProfil();
     if (sectionActive === "quiz") return renderQuiz();
+    if (sectionActive === "mes-notes") return renderMesNotes();
     return renderContenuCours();
   }
 
@@ -566,17 +670,7 @@ export default function TableauBord(props: any) {
                   onClick={() => setSectionActive("overview")}
                   active={sectionActive === "overview"}
                 />
-                <MenuButton
-                  label="Contenu cours"
-                  onClick={() => setSectionActive("contenu")}
-                  active={sectionActive === "contenu"}
-                />
-              </div>
-            </div>
 
-            <div className="mt-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase">Parcours</p>
-              <div className="mt-2 space-y-2">
                 <MenuButton
                   label="Mes cours"
                   onClick={() => setSectionActive("mes-cours")}
@@ -593,23 +687,11 @@ export default function TableauBord(props: any) {
                   active={sectionActive === "historique"}
                 />
                 <MenuButton
-                  label="Quiz"
-                  onClick={() => setSectionActive("quiz")}
-                  active={sectionActive === "quiz"}
+                  label="Mes notes"
+                  onClick={() => setSectionActive("mes-notes")}
+                  active={sectionActive === "mes-notes"}
                 />
-                <MenuButton
-                  label="Mini-jeux"
-                  onClick={() => navigate("/mini-jeu")}
-                />
-                <MenuButton
-                  label="Bibliothèque"
-                  onClick={() => navigate("/bibliotheque")}
-                />
-                <MenuButton
-                  label="Profil"
-                  onClick={() => setSectionActive("profil")}
-                  active={sectionActive === "profil"}
-                />
+
               </div>
             </div>
 
@@ -641,3 +723,108 @@ export default function TableauBord(props: any) {
   );
 }
 
+/* ─── Composant chatbot recommandation parcours ─── */
+function RecommandationIA({ etudiant }: { etudiant: Etudiant }) {
+  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
+    {
+      role: 'ai',
+      text: `Bonjour ${etudiant.nom} ! 🎓 Je suis votre conseiller IA. Dites-moi un domaine qui vous intéresse (ex: développement web, cybersécurité, IA…) et je vous recommande un parcours personnalisé !`,
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const coursSuivisTitres = etudiant.coursSuivis
+    .map((cs: { idCours: number }) => getCoursCache().find((c) => c.id === cs.idCours)?.titre)
+    .filter(Boolean)
+    .join(', ');
+
+  const sendMessage = async () => {
+    const q = input.trim();
+    if (!q || loading) return;
+    setMessages(prev => [...prev, { role: 'user', text: q }]);
+    setInput('');
+    setLoading(true);
+    try {
+      const ctx = `[CONTEXTE : L'étudiant ${etudiant.nom} suit ces cours : ${coursSuivisTitres || 'aucun pour l\'instant'}. Son parcours choisi : ${etudiant.parcoursGuideChoisi || 'libre'}. Réponds en recommandant des cours ou un parcours adapté à sa question. Sois concis et bienveillant.]`;
+      const data = await apiPost<{ response: string }>("/ai/chat", { message: q + ctx, lang: "fr" });
+      setMessages(prev => [...prev, { role: 'ai', text: data.response || 'Désolé, je n\'ai pas pu répondre.' }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'ai', text: 'Erreur de connexion. Vérifiez le backend.' }]);
+    } finally {
+      setLoading(false);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+  };
+
+  const suggestions = ['Que dois-je apprendre en cybersécurité ?', 'Recommande-moi un parcours IA', 'Comment progresser en développement web ?'];
+
+  return (
+    <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/50 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-900 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-4 flex items-center gap-3">
+        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl">🤖</div>
+        <div>
+          <p className="font-bold text-white text-sm">Conseiller IA Parcours</p>
+          <p className="text-indigo-200 text-xs">Recommandations personnalisées basées sur votre profil</p>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="h-56 overflow-y-auto p-4 space-y-3">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+              m.role === 'user'
+                ? 'bg-indigo-600 text-white rounded-br-none'
+                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-bl-none shadow-sm'
+            }`}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-bl-none px-4 py-3 flex gap-1.5">
+              {[0, 150, 300].map(d => (
+                <div key={d} className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />
+              ))}
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Suggestions rapides */}
+      {messages.length <= 1 && (
+        <div className="px-4 pb-2 flex flex-wrap gap-2">
+          {suggestions.map(s => (
+            <button key={s} onClick={() => setInput(s)}
+              className="px-3 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/60 transition">
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div className="p-3 border-t border-indigo-100 dark:border-indigo-900/40 flex gap-2">
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }}
+          placeholder="Demandez un conseil de parcours…"
+          className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-slate-400"
+        />
+        <button
+          onClick={sendMessage}
+          disabled={!input.trim() || loading}
+          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-xl text-sm font-bold transition active:scale-95"
+        >
+          Envoyer
+        </button>
+      </div>
+    </div>
+  );
+}

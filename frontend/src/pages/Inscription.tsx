@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import ChampSaisie from "../composants/ChampSaisie";
 import { inscriptionEtudiant, type NiveauEtude } from "../services/etudiantService";
@@ -21,6 +21,7 @@ export default function Inscription(props: any) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validatePassword = (password: string) => {
     const lettre = /[a-zA-Z]/.test(password);
@@ -33,7 +34,7 @@ export default function Inscription(props: any) {
     return "";
   };
 
-  const handleSubmit = (e?: FormEvent) => {
+  const handleSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
 
     const { nom, prenom, email, password, confirmPassword } = formData;
@@ -53,10 +54,18 @@ export default function Inscription(props: any) {
       return;
     }
 
-    const user = inscriptionEtudiant(`${nom} ${prenom}`.trim(), email, password, niveauEtude);
-    setError("");
-    setEtudiant(user);
-    navigate("/mode-apprentissage");
+    setLoading(true);
+    try {
+      const user = await inscriptionEtudiant(`${nom} ${prenom}`.trim(), email, password, niveauEtude);
+      setError("");
+      setEtudiant(user);
+      navigate("/mode-apprentissage");
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message ?? "Inscription impossible.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -160,17 +169,11 @@ export default function Inscription(props: any) {
 
               <button
                 type="submit"
-                className="w-full mt-4 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition text-center cursor-pointer"
+                disabled={loading}
+                className="w-full mt-4 py-3 rounded-full bg-orange-500 text-white font-semibold shadow-md hover:bg-orange-600 transition text-center cursor-pointer disabled:opacity-60"
               >
                 S’inscrire
               </button>
-
-              <p className="text-xs text-center text-gray-500 dark:text-slate-400 pt-2">
-                Formateur ?{" "}
-                <Link to="/inscription-formateur" className="text-blue-600 font-semibold hover:underline">
-                  Inscription formateur
-                </Link>
-              </p>
             </form>
           </div>
         </div>

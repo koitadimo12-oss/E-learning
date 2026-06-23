@@ -1,6 +1,5 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
 import CarteCours from "../composants/CarteCours";
@@ -8,6 +7,8 @@ import CarteTemoignage from "../composants/CarteTemoignages";
 import SectionReveal from "../composants/SectionReveal";
 import { listeCours } from "../services/coursService";
 import type { Cours } from "../services/coursService";
+import { chargerCours, getCoursCache } from "../services/coursApi";
+import { getStatsPlateforme, type StatsPlateforme } from "../services/statsApi";
 import { useCountUp } from "../hooks/useCountUp";
 import { useInViewOnce } from "../hooks/useInViewOnce";
 import { getDernierCoursId, getObjectifDuJour } from "../services/stockageLocal";
@@ -16,94 +17,160 @@ import type { Etudiant } from "../services/etudiantService";
 
 type Props = { etudiant: Etudiant | null; onDeconnexion: () => void };
 
+const HERO_IMAGES = [
+  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1200&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1513258496099-48168024aec0?w=1200&auto=format&fit=crop",
+];
+
+const CYCLING_WORDS = ["efficacement", "rapidement", "intelligemment", "durablement"];
+
+const TICKER_ITEMS = [
+  "📚 Bibliothèque numérique", "🎯 Quiz intelligents", "🏆 Certificats",
+  "🔥 Streaks quotidiens", "🎓 Universités prestigieuses", "💡 Micro-learning",
+  "📊 Suivi de progression", "🤖 Assistant IA", "🌍 Accessibilité globale",
+  "📚 Bibliothèque numérique", "🎯 Quiz intelligents", "🏆 Certificats",
+  "🔥 Streaks quotidiens", "🎓 Universités prestigieuses", "💡 Micro-learning",
+  "📊 Suivi de progression", "🤖 Assistant IA", "🌍 Accessibilité globale",
+];
+
 export default function Acceuil(props: Props) {
   const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
   const location = useLocation();
+  const [wordIdx, setWordIdx] = useState(0);
+  const [imgIdx, setImgIdx] = useState(0);
+  const [stats, setStats] = useState<StatsPlateforme>({
+    coursDisponibles: 0,
+    livresDisponibles: 0,
+    etudiantsActifs: 0,
+  });
+  const [coursApi, setCoursApi] = useState<Cours[]>(() => getCoursCache());
 
-  const coursPopulaires = useMemo(() => [...listeCours].sort(() => 0.5 - Math.random()).slice(0, 6), []);
-  const categoriesUniques = useMemo(() => [...new Set(listeCours.map((c) => c.categorie))], []);
+  useEffect(() => {
+    void chargerCours().then(setCoursApi).catch(() => undefined);
+    void getStatsPlateforme().then(setStats).catch(() => undefined);
+  }, []);
+
+  const tousLesCours = coursApi.length > 0 ? coursApi : listeCours;
+  const coursPopulaires = useMemo(() => [...tousLesCours].sort(() => 0.5 - Math.random()).slice(0, 6), [tousLesCours]);
+  const categoriesUniques = useMemo(() => [...new Set(tousLesCours.map((c) => c.categorie))], [tousLesCours]);
   const dernierId = getDernierCoursId();
-  const dernierCours = dernierId ? listeCours.find((c) => c.id === dernierId) : undefined;
+  const dernierCours = dernierId ? tousLesCours.find((c) => c.id === dernierId) : undefined;
   const objectif = getObjectifDuJour();
 
   const { ref: heroStatsRef, visible: heroStatsVisible } = useInViewOnce();
-  const countCours = useCountUp(listeCours.length, 1600, heroStatsVisible);
+  const countCours = useCountUp(stats.coursDisponibles, 1600, heroStatsVisible);
+  const countEtudiants = useCountUp(stats.etudiantsActifs, 1600, heroStatsVisible);
+  const countLivres = useCountUp(stats.livresDisponibles, 1600, heroStatsVisible);
 
-  useEffect(() => {
-    if (etudiant) toucherStreak(etudiant.id);
-  }, [etudiant?.id]);
+  useEffect(() => { if (etudiant) void toucherStreak(etudiant.id); }, [etudiant?.id]);
 
   useEffect(() => {
     if (location.hash === "#a-propos") {
-      const section = document.getElementById("a-propos");
-      section?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("a-propos")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [location.hash]);
 
+  // Word cycling animation
+  useEffect(() => {
+    const t = setInterval(() => setWordIdx(i => (i + 1) % CYCLING_WORDS.length), 2800);
+    return () => clearInterval(t);
+  }, []);
+
+  // Image slider
+  useEffect(() => {
+    const t = setInterval(() => setImgIdx(i => (i + 1) % HERO_IMAGES.length), 5000);
+    return () => clearInterval(t);
+  }, []);
+
   const temoignages = [
-    { nom: "Awa", texte: "Les cours sont clairs et bien structurés. J’ai progressé rapidement." },
+    { nom: "Awa", texte: "Les cours sont clairs et bien structurés. J'ai progressé rapidement." },
     { nom: "Mamadou", texte: "Quiz utiles et progression claire : ça change tout." },
     { nom: "Fatou", texte: "Les cours sont pratiques et motivants du début à la fin." },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
       <BarreNavigation etudiant={etudiant} onDeconnexion={onDeconnexion} fixe />
 
-      {/* Offset pour barre fixe */}
-      <div className="pt-[76px] sm:pt-[84px]" />
+      {/* ── HERO with image slider ── */}
+      <section className="relative overflow-hidden text-white min-h-[92vh] flex items-center">
+        {/* Sliding background images */}
+        {HERO_IMAGES.map((src, i) => (
+          <div
+            key={src}
+            className="absolute inset-0 transition-opacity duration-1000"
+            style={{ opacity: i === imgIdx ? 1 : 0, zIndex: 0 }}
+          >
+            <img src={src} alt="" className="w-full h-full object-cover animate-knd-ken-burns" />
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-blue-950/80 to-slate-900/85" />
+          </div>
+        ))}
 
-      {/* Hero — mesh, typographie forte, glass */}
-      <section className="relative knd-mesh-hero knd-animated-gradient text-white">
-        <div
-          className="pointer-events-none absolute top-24 right-[10%] w-40 h-40 rounded-full bg-orange-500/20 blur-3xl knd-orbit-dot"
-          aria-hidden
-        />
-        <div className="relative max-w-6xl mx-auto px-6 md:px-10 py-16 md:py-24">
-          <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute top-24 right-[8%] w-48 h-48 rounded-full bg-orange-500/20 blur-3xl knd-orbit-dot" aria-hidden />
+        <div className="pointer-events-none absolute bottom-16 left-[5%] w-56 h-56 rounded-full bg-blue-600/15 blur-3xl" aria-hidden />
+
+        <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-10 py-16 md:py-24 w-full">
+          <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-14 items-center">
+            {/* LEFT */}
             <div>
-              <p className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.2em] uppercase text-blue-200/90">
+              <p className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.2em] uppercase text-blue-200/90 animate-knd-fade-up">
                 <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
                 Kaay Niou Diang
               </p>
-              <h2 className="mt-5 text-4xl sm:text-5xl md:text-6xl font-black leading-[1.05] tracking-tight">
-                {etudiant ? `Bon retour ${etudiant.nom.split(" ")[0]}.` : "Apprenez efficacement."}
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-white to-blue-200">
-                  {etudiant ? `Cap sur le niveau ${etudiant.niveauEtude}.` : "Montez de niveau chaque semaine."}
-                </span>
+
+              <h2 className="mt-5 text-4xl sm:text-5xl md:text-6xl font-black leading-[1.05] tracking-tight animate-knd-fade-up knd-delay-100">
+                {etudiant ? `Bon retour ${etudiant.nom.split(" ")[0]}.` : "Apprenez"}
+                {/* Animated cycling word */}
+                {!etudiant && (
+                  <span className="block relative h-[1.1em] overflow-hidden">
+                    {CYCLING_WORDS.map((w, i) => (
+                      <span
+                        key={w}
+                        className="absolute left-0 text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-amber-200 to-blue-300 transition-all duration-700"
+                        style={{
+                          opacity: i === wordIdx ? 1 : 0,
+                          transform: i === wordIdx ? "translateY(0)" : i < wordIdx ? "translateY(-100%)" : "translateY(100%)",
+                        }}
+                      >
+                        {w}.
+                      </span>
+                    ))}
+                  </span>
+                )}
+                {etudiant && (
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-white to-blue-200">
+                    Cap sur le niveau {etudiant.niveauEtude}.
+                  </span>
+                )}
               </h2>
-              {!etudiant && (
-                <p className="mt-4 text-base sm:text-lg text-blue-100/90 max-w-xl leading-relaxed">
-                  Une expérience orientée <span className="font-bold text-white">micro-learning</span> avec des cours YouTube, des quiz intelligents et un suivi personnalisé.
-                </p>
-              )}
-              <p className="mt-6 text-lg text-blue-100/90 max-w-xl leading-relaxed">
-                Cours YouTube, quiz intelligents, favoris & notes locales — une expérience pensée pour la vie réelle des
-                étudiants.
+
+              <p className="mt-5 text-base sm:text-lg text-blue-100/90 max-w-xl leading-relaxed animate-knd-fade-up knd-delay-200">
+                Cours YouTube, quiz intelligents, favoris &amp; notes locales — une expérience pensée pour la vie réelle des étudiants.
               </p>
-              <div className="mt-10 flex flex-col sm:flex-row gap-4">
+
+              <div className="mt-10 flex flex-col sm:flex-row gap-4 animate-knd-fade-up knd-delay-300">
                 <button
-                  type="button"
                   onClick={() => navigate("/cours")}
-                  className="px-8 py-4 rounded-2xl bg-orange-500 hover:bg-orange-400 text-white font-bold shadow-lg shadow-orange-500/25 transition hover:-translate-y-0.5"
+                  className="px-8 py-4 rounded-2xl bg-orange-500 hover:bg-orange-400 text-white font-bold shadow-lg shadow-orange-500/30 transition hover:-translate-y-0.5 animate-knd-pulse-cta"
                 >
                   Explorer les cours
                 </button>
                 <button
-                  type="button"
-                  onClick={() => (etudiant ? navigate("/tableau-bord") : navigate("/inscription"))}
+                  onClick={() => etudiant ? navigate("/tableau-bord") : navigate("/inscription")}
                   className="px-8 py-4 rounded-2xl knd-glass text-white font-semibold hover:bg-white/10 transition"
                 >
                   {etudiant ? "Mon tableau de bord" : "Créer un compte"}
                 </button>
               </div>
 
-              <div ref={heroStatsRef} className="mt-12 grid grid-cols-3 gap-3 sm:gap-4 max-w-lg">
+              <div ref={heroStatsRef} className="mt-12 grid grid-cols-3 gap-3 sm:gap-4 max-w-lg animate-knd-fade-up knd-delay-400">
                 {[
-                  { label: "Cours", val: `${countCours}+` },
-                  { label: "Étudiants actifs", val: "2K+" },
-                  { label: "Satisfaction", val: "98%" },
+                  { label: "Cours", val: countCours },
+                  { label: "Étudiants inscrits", val: countEtudiants },
+                  { label: "Livres", val: countLivres },
                 ].map((s) => (
                   <div key={s.label} className="knd-glass rounded-2xl px-3 py-4 text-center">
                     <p className="text-2xl sm:text-3xl font-black tabular-nums">{s.val}</p>
@@ -113,25 +180,26 @@ export default function Acceuil(props: Props) {
               </div>
             </div>
 
-            <div className="relative">
+            {/* RIGHT — image dots + feature tiles */}
+            <div className="relative animate-knd-fade-up knd-delay-200">
               <div className="knd-glass rounded-3xl p-6 md:p-8 space-y-5">
                 <p className="text-sm font-bold text-orange-200 uppercase tracking-widest">Aperçu plateforme</p>
                 <div className="grid grid-cols-2 gap-3">
                   {["Cours & quiz", "Progression", "Tableau de bord", "Certificats"].map((t) => (
-                    <div
-                      key={t}
-                      className="rounded-2xl bg-white/5 border border-white/10 px-4 py-5 text-sm font-semibold hover:bg-white/10 transition cursor-default"
-                    >
+                    <div key={t} className="rounded-2xl bg-white/5 border border-white/10 px-4 py-5 text-sm font-semibold hover:bg-white/10 transition cursor-default">
                       {t}
                     </div>
                   ))}
                 </div>
-                <div className="rounded-2xl overflow-hidden border border-white/10 aspect-video bg-black/40 max-w-sm">
-                  <img
-                    src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop"
-                    alt="Étudiants apprenant en ligne"
-                    className="w-full h-full object-cover opacity-90"
-                  />
+                {/* Slider thumbnail dots */}
+                <div className="flex gap-2 justify-center pt-2">
+                  {HERO_IMAGES.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setImgIdx(i)}
+                      className={`transition-all rounded-full ${i === imgIdx ? "w-6 h-2 bg-orange-400" : "w-2 h-2 bg-white/30"}`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -139,7 +207,16 @@ export default function Acceuil(props: Props) {
         </div>
       </section>
 
-      {/* Bloc étudiant connecté */}
+      {/* ── TICKER MARQUEE ── */}
+      <div className="bg-orange-500 py-3 overflow-hidden">
+        <div className="knd-ticker inline-flex gap-10">
+          {TICKER_ITEMS.map((item, i) => (
+            <span key={i} className="text-white font-bold text-sm shrink-0 mx-4">{item}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Student block ── */}
       {etudiant && (
         <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-white/5">
           <div className="max-w-6xl mx-auto px-6 md:px-10 py-14">
@@ -159,47 +236,27 @@ export default function Acceuil(props: Props) {
                 <p className="text-xs font-bold uppercase tracking-widest text-emerald-300">Reprendre</p>
                 {dernierCours ? (
                   <>
-                    <p className="font-bold mt-3 text-lg">{dernierCours.titre}</p>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/cours/${dernierCours.id}`)}
-                      className="mt-auto pt-4 w-full py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-orange-400 hover:text-white transition"
-                    >
+                    <p className="font-bold mt-3 text-lg text-white">{dernierCours.titre}</p>
+                    <button onClick={() => navigate(`/cours/${dernierCours.id}`)} className="mt-auto pt-4 w-full py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-orange-400 hover:text-white transition">
                       Continuer
                     </button>
                   </>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/cours")}
-                    className="mt-4 py-3 rounded-xl bg-blue-600 text-white font-bold"
-                  >
+                  <button onClick={() => navigate("/cours")} className="mt-4 py-3 rounded-xl bg-blue-600 text-white font-bold">
                     Choisir un cours
                   </button>
                 )}
               </div>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => navigate("/favoris")}
-                className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5"
-              >
-                ❤️ Mes favoris
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/profil")}
-                className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5"
-              >
-                👤 Mon profil
-              </button>
+              <button onClick={() => navigate("/favoris")} className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5 text-white">❤️ Mes favoris</button>
+              <button onClick={() => navigate("/profil")} className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5 text-white">👤 Mon profil</button>
             </div>
           </div>
         </section>
       )}
 
-      {/* Bento fonctionnalités */}
+      {/* ── Features bento ── */}
       <SectionReveal>
         <section className="py-20 bg-white dark:bg-slate-950">
           <div className="max-w-6xl mx-auto px-6 md:px-10">
@@ -209,28 +266,13 @@ export default function Acceuil(props: Props) {
             </p>
             <div className="mt-12 grid md:grid-cols-3 gap-5">
               {[
-                {
-                  t: "Parcours cours",
-                  d: "YouTube intégré, playlist, progression auto et quiz pour valider chaque module.",
-                  c: "from-blue-700 to-indigo-700",
-                },
-                {
-                  t: "Suivi intelligent",
-                  d: "Objectifs quotidiens, reprise rapide du dernier cours et indicateurs utiles.",
-                  c: "from-orange-600 to-rose-700",
-                },
-                {
-                  t: "Expérience immersive",
-                  d: "Interface premium claire en mode clair et confortable en mode sombre.",
-                  c: "from-emerald-600 to-teal-700",
-                },
+                { t: "Parcours cours", d: "YouTube intégré, playlist, progression auto et quiz pour valider chaque module.", c: "from-blue-700 to-indigo-700" },
+                { t: "Suivi intelligent", d: "Objectifs quotidiens, reprise rapide du dernier cours et indicateurs utiles.", c: "from-orange-600 to-rose-700" },
+                { t: "Expérience immersive", d: "Interface premium claire en mode clair et confortable en mode sombre.", c: "from-emerald-600 to-teal-700" },
               ].map((b) => (
-                <div
-                  key={b.t}
-                  className={`rounded-3xl p-8 bg-gradient-to-br ${b.c} border border-white/10 text-white shadow-xl`}
-                >
+                <div key={b.t} className={`rounded-3xl p-8 bg-gradient-to-br ${b.c} border border-white/10 text-white shadow-xl hover:-translate-y-1 transition-transform duration-300`}>
                   <h4 className="text-xl font-bold">{b.t}</h4>
-                  <p className="mt-3 text-sm text-white leading-relaxed">{b.d}</p>
+                  <p className="mt-3 text-sm text-white/90 leading-relaxed">{b.d}</p>
                 </div>
               ))}
             </div>
@@ -238,16 +280,14 @@ export default function Acceuil(props: Props) {
         </section>
       </SectionReveal>
 
+      {/* ── Domains ── */}
       <SectionReveal>
         <section className="py-16 bg-gray-100 dark:bg-slate-900/50 border-y border-gray-200 dark:border-white/5">
           <div className="max-w-6xl mx-auto px-6 md:px-10 text-center">
             <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Domaines couverts</h3>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               {categoriesUniques.map((cat) => (
-                <span
-                  key={cat}
-                  className="px-4 py-2 rounded-full text-sm font-semibold bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-blue-700 dark:text-blue-100 hover:border-orange-400/50 transition"
-                >
+                <span key={cat} className="px-4 py-2 rounded-full text-sm font-semibold bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-blue-700 dark:text-blue-100 hover:border-orange-400/50 transition cursor-default">
                   {cat}
                 </span>
               ))}
@@ -256,43 +296,31 @@ export default function Acceuil(props: Props) {
         </section>
       </SectionReveal>
 
+      {/* ── Popular courses ── */}
       <SectionReveal>
-        <section className="py-16 max-w-4xl mx-auto px-6 md:px-10">
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 md:p-12 shadow-sm">
-            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Accès visiteur</h3>
-            <p className="mt-3 text-slate-700 dark:text-slate-300 leading-relaxed text-lg">
-              Sans connexion, vous pouvez parcourir le catalogue et regarder <strong>30 secondes</strong> de chaque vidéo.
-              Pour accéder au texte complet, aux quiz et aux modules, il faut créer un compte.
-            </p>
-            <div className="mt-10 grid sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { t: "Catalogue", d: "Accessible à tous" },
-                { t: "Vidéo", d: "Preview 30 secondes" },
-                { t: "Texte", d: "Réservé aux inscrits" },
-                { t: "Quiz", d: "Réservé aux inscrits" },
-              ].map((x) => (
-                <div
-                  key={x.t}
-                  className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 p-5 text-center transition hover:border-blue-300"
-                >
-                  <p className="font-bold text-slate-900 dark:text-white mb-1">{x.t}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{x.d}</p>
-                </div>
-              ))}
-            </div>
+        <section className="py-16 max-w-6xl mx-auto px-6 md:px-10">
+          <h3 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Cours populaires</h3>
+          <div className="mt-10 grid md:grid-cols-3 gap-6">
+            {coursPopulaires.map((cours: Cours) => (
+              <div key={cours.id} className="dark:[&_.bg-white]:bg-slate-900 dark:[&_.text-gray-900]:text-white dark:[&_.border-gray-100]:border-slate-800">
+                <CarteCours cours={cours} onVoirCours={(id: number) => navigate(`/cours/${id}`)} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 flex justify-center">
+            <button onClick={() => navigate("/cours")} className="px-8 py-3 rounded-2xl bg-orange-500 text-white font-bold hover:bg-orange-400 transition">
+              Voir tout le catalogue
+            </button>
           </div>
         </section>
       </SectionReveal>
 
+      {/* ── Universities ── */}
       <SectionReveal>
         <section className="py-16 bg-gray-100 dark:bg-slate-900/30 border-y border-gray-200 dark:border-white/5">
           <div className="max-w-6xl mx-auto px-6 md:px-10">
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white text-center">
-              Universités prestigieuses
-            </h3>
-            <p className="text-center text-gray-600 dark:text-slate-300 mt-3 max-w-2xl mx-auto">
-              Accédez aux cours des plus grandes universités du monde.
-            </p>
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white text-center">Universités prestigieuses</h3>
+            <p className="text-center text-gray-600 dark:text-slate-300 mt-3 max-w-2xl mx-auto">Accédez aux cours des plus grandes universités du monde.</p>
             <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
                 { name: "Harvard", img: "https://images.unsplash.com/photo-1562774053-701939374585?w=600&auto=format&fit=crop", count: "6 cours" },
@@ -300,12 +328,8 @@ export default function Acceuil(props: Props) {
                 { name: "Stanford", img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&auto=format&fit=crop", count: "3 cours" },
                 { name: "Oxford", img: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&auto=format&fit=crop", count: "3 cours" },
               ].map((u) => (
-                <button
-                  key={u.name}
-                  type="button"
-                  onClick={() => navigate(`/cours?university=${encodeURIComponent(u.name)}`)}
-                  className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden text-left hover:-translate-y-1 transition-all shadow-sm hover:shadow-lg group"
-                >
+                <button key={u.name} onClick={() => navigate(`/cours?university=${encodeURIComponent(u.name)}`)}
+                  className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden text-left hover:-translate-y-1 transition-all shadow-sm hover:shadow-lg group">
                   <div className="h-32 overflow-hidden">
                     <img src={u.img} alt={u.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
@@ -320,28 +344,7 @@ export default function Acceuil(props: Props) {
         </section>
       </SectionReveal>
 
-      <SectionReveal>
-        <section className="py-16 max-w-6xl mx-auto px-6 md:px-10">
-          <h3 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Cours populaires</h3>
-          <div className="mt-10 grid md:grid-cols-3 gap-6">
-            {coursPopulaires.map((cours: Cours) => (
-              <div key={cours.id} className="dark:[&_.bg-white]:bg-slate-900 dark:[&_.text-gray-900]:text-white dark:[&_.border-gray-100]:border-slate-800">
-                <CarteCours cours={cours} onVoirCours={(id: number) => navigate(`/cours/${id}`)} />
-              </div>
-            ))}
-          </div>
-          <div className="mt-10 flex justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/cours")}
-              className="px-8 py-3 rounded-2xl bg-orange-500 text-white font-bold hover:bg-orange-400 transition"
-            >
-              Voir tout le catalogue
-            </button>
-          </div>
-        </section>
-      </SectionReveal>
-
+      {/* ── Testimonials ── */}
       <SectionReveal>
         <section className="py-16 bg-gray-100 dark:bg-slate-900/30 border-y border-gray-200 dark:border-white/5">
           <div className="max-w-6xl mx-auto px-6 md:px-10">
@@ -357,28 +360,19 @@ export default function Acceuil(props: Props) {
         </section>
       </SectionReveal>
 
+      {/* ── About ── */}
       <SectionReveal>
         <section id="a-propos" className="py-16 max-w-6xl mx-auto px-6 md:px-10">
           <div className="rounded-3xl p-8 md:p-12 border border-slate-200 dark:border-slate-700 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-xl">
             <h3 className="text-3xl md:text-4xl font-bold">À propos de Kaay Niou Diang</h3>
             <p className="mt-4 text-slate-700 dark:text-slate-200 leading-relaxed">
-              Kaay Niou Diang est une plateforme d&apos;apprentissage en ligne qui aide les étudiants à apprendre à leur
-              rythme avec des cours clairs, des quiz utiles et une progression motivante.
+              Kaay Niou Diang est une plateforme d&apos;apprentissage en ligne qui aide les étudiants à apprendre à leur rythme avec des cours clairs, des quiz utiles et une progression motivante.
             </p>
             <div className="mt-8 grid md:grid-cols-3 gap-4">
               {[
-                {
-                  titre: "Notre mission",
-                  texte: "Rendre l'apprentissage accessible avec des contenus pratiques, progressifs et modernes.",
-                },
-                {
-                  titre: "Notre méthode",
-                  texte: "Chaque cours suit une structure simple : leçons, notes personnelles, quiz et progression.",
-                },
-                {
-                  titre: "Notre vision",
-                  texte: "Construire une génération d'apprenants autonomes capables d'évoluer en continu.",
-                },
+                { titre: "Notre mission", texte: "Rendre l'apprentissage accessible avec des contenus pratiques, progressifs et modernes." },
+                { titre: "Notre méthode", texte: "Chaque cours suit une structure simple : leçons, notes personnelles, quiz et progression." },
+                { titre: "Notre vision", texte: "Construire une génération d'apprenants autonomes capables d'évoluer en continu." },
               ].map((item) => (
                 <div key={item.titre} className="rounded-2xl bg-slate-50 border border-slate-200 p-5 dark:bg-slate-800 dark:border-slate-700">
                   <h4 className="font-bold text-slate-900 dark:text-white">{item.titre}</h4>
@@ -390,107 +384,153 @@ export default function Acceuil(props: Props) {
         </section>
       </SectionReveal>
 
-      <SectionReveal>
-        <section className="py-16 bg-gray-100 dark:bg-slate-900/40 border-y border-gray-200 dark:border-white/5">
-          <div className="max-w-6xl mx-auto px-6 md:px-10">
-            <h3 className="text-3xl font-bold text-gray-900 dark:text-white text-center">Pourquoi choisir la plateforme</h3>
-            <div className="mt-10 grid md:grid-cols-4 gap-4">
-              {[
-                "Parcours guidé et lisible",
-                "Suivi personnalisé",
-                "Reprise rapide du dernier cours",
-                "Certificats et montée en compétences",
-              ].map((r) => (
-                <div key={r} className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 text-gray-800 dark:text-slate-200 text-sm font-medium">
-                  {r}
+      {/* ── IMAGE SHOWCASE (visiteurs uniquement) ── */}
+      {!etudiant && (
+        <SectionReveal>
+          <section className="py-20 bg-gradient-to-b from-slate-950 to-slate-900 overflow-hidden relative">
+            {/* Ambient blobs */}
+            <div className="pointer-events-none absolute top-0 left-1/4 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl" aria-hidden />
+            <div className="pointer-events-none absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-orange-500/10 blur-3xl" aria-hidden />
+
+            <div className="max-w-6xl mx-auto px-6 md:px-10 relative z-10">
+              <div className="text-center mb-16">
+                <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-xs font-black uppercase tracking-[0.2em] mb-4">
+                  ✨ Pourquoi nous choisir
+                </span>
+                <h3 className="text-3xl md:text-5xl font-black text-white leading-tight">
+                  Une expérience conçue pour<br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-blue-400">votre réussite</span>
+                </h3>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-8">
+                {/* Card 1 — Apprentissage */}
+                <div
+                  className="group relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl"
+                  style={{ animation: "floatCard 6s ease-in-out infinite" }}
+                >
+                  <div className="h-64 overflow-hidden">
+                    <img
+                      src="/images/apprentissage.png"
+                      alt="Apprentissage interactif"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🎓</span>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[10px] font-black uppercase tracking-widest">Apprentissage</span>
+                    </div>
+                    <h4 className="font-black text-white text-xl">Cours interactifs</h4>
+                    <p className="text-slate-300 text-sm mt-1 leading-relaxed">
+                      Des vidéos, quiz et explications IA pour maîtriser chaque sujet à votre rythme.
+                    </p>
+                  </div>
                 </div>
-              ))}
+
+                {/* Card 2 — Certificats (légèrement décalée vers le bas) */}
+                <div
+                  className="group relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl md:mt-10"
+                  style={{ animation: "floatCard 6s ease-in-out infinite 2s" }}
+                >
+                  <div className="h-64 overflow-hidden">
+                    <img
+                      src="/images/certificat.png"
+                      alt="Certificats reconnus"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🏆</span>
+                      <span className="px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-400/30 text-orange-300 text-[10px] font-black uppercase tracking-widest">Certificats</span>
+                    </div>
+                    <h4 className="font-black text-white text-xl">Validez vos compétences</h4>
+                    <p className="text-slate-300 text-sm mt-1 leading-relaxed">
+                      Obtenez des certificats reconnus après chaque parcours complété avec succès.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card 3 — Qualité */}
+                <div
+                  className="group relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl"
+                  style={{ animation: "floatCard 6s ease-in-out infinite 4s" }}
+                >
+                  <div className="h-64 overflow-hidden">
+                    <img
+                      src="/images/qualite.png"
+                      alt="Qualité pédagogique"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">⭐</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-widest">Qualité</span>
+                    </div>
+                    <h4 className="font-black text-white text-xl">Contenu premium</h4>
+                    <p className="text-slate-300 text-sm mt-1 leading-relaxed">
+                      Une IA Mistral intégrée pour des explications toujours à la hauteur.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Animated stats row */}
+              <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                  { val: "50+", label: "Livres numériques", icon: "📚" },
+                  { val: "100%", label: "Gratuit à l'inscription", icon: "🆓" },
+                  { val: "24/7", label: "IA disponible", icon: "🤖" },
+                  { val: "∞", label: "Progression illimitée", icon: "🚀" },
+                ].map((stat, i) => (
+                  <div
+                    key={stat.label}
+                    className="text-center p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all hover:-translate-y-1"
+                    style={{ animation: `fadeSlideUp 0.6s ease-out ${i * 0.15}s both` }}
+                  >
+                    <span className="text-3xl">{stat.icon}</span>
+                    <p className="text-3xl font-black text-white mt-3">{stat.val}</p>
+                    <p className="text-slate-400 text-xs mt-1 font-medium">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
-      </SectionReveal>
 
-      <SectionReveal>
-        <section className="py-16 max-w-6xl mx-auto px-6 md:px-10">
-          <h3 className="text-3xl font-bold text-gray-900 dark:text-white text-center">FAQ rapide</h3>
-          <div className="mt-10 grid md:grid-cols-2 gap-5">
-            {[
-              {
-                q: "Faut-il s'inscrire pour suivre ses cours ?",
-                r: "Oui. L'inscription permet de sauvegarder vos progrès, vos favoris et votre parcours.",
-              },
-              {
-                q: "Comment reprendre là où j’ai arrêté ?",
-                r: "Votre dernier cours est conservé pour reprendre rapidement depuis l’accueil et le tableau de bord.",
-              },
-              {
-                q: "Mes notes sont-elles sauvegardées ?",
-                r: "Oui. Elles sont sauvegardées localement sur votre appareil pendant la navigation.",
-              },
-              {
-                q: "Comment fonctionne le like ?",
-                r: "Chaque étudiant peut liker une seule fois une leçon ou un formateur.",
-              },
-            ].map((f) => (
-              <article key={f.q} className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6">
-                <h4 className="font-bold text-gray-900 dark:text-white">{f.q}</h4>
-                <p className="mt-2 text-sm text-gray-700 dark:text-slate-300">{f.r}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-      </SectionReveal>
+            <style>{`
+              @keyframes floatCard {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-10px); }
+              }
+              @keyframes fadeSlideUp {
+                from { opacity: 0; transform: translateY(30px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `}</style>
+          </section>
+        </SectionReveal>
+      )}
 
+      {/* ── CTA ── */}
       <SectionReveal>
         <section className="pb-20 max-w-6xl mx-auto px-6 md:px-10">
           <div className="rounded-3xl border border-orange-300/60 dark:border-orange-500/30 bg-gradient-to-r from-orange-100 via-blue-100 to-indigo-100 dark:from-orange-500/20 dark:via-blue-600/20 dark:to-indigo-600/20 p-10 text-center shadow-xl">
-            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Prêt à rejoindre l’aventure ?</h3>
-            <p className="mt-3 text-slate-700 dark:text-slate-200 max-w-xl mx-auto">
-              Inscription rapide, tableaux de bord épurés et navigation fluide sur mobile.
-            </p>
+            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Prêt à rejoindre l'aventure ?</h3>
+            <p className="mt-3 text-slate-700 dark:text-slate-200 max-w-xl mx-auto">Inscription rapide, tableaux de bord épurés et navigation fluide sur mobile.</p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                type="button"
-                onClick={() => navigate("/inscription")}
-                className="px-8 py-3 rounded-2xl bg-white text-slate-900 font-bold hover:bg-orange-400 hover:text-white transition"
-              >
-                Je m’inscris
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/connexion")}
-                className="px-8 py-3 rounded-2xl border border-slate-400/60 dark:border-white/40 text-slate-900 dark:text-white font-semibold hover:bg-white/50 dark:hover:bg-white/10"
-              >
-                J’ai déjà un compte
-              </button>
+              <button onClick={() => navigate("/inscription")} className="px-8 py-3 rounded-2xl bg-orange-500 text-white font-bold hover:bg-orange-400 transition">Je m'inscris</button>
+              <button onClick={() => navigate("/connexion")} className="px-8 py-3 rounded-2xl border border-slate-400/60 dark:border-white/40 text-slate-900 dark:text-white font-semibold hover:bg-white/50 dark:hover:bg-white/10">J'ai déjà un compte</button>
             </div>
           </div>
         </section>
       </SectionReveal>
 
-      <SectionReveal>
-        <section className="pb-20 max-w-6xl mx-auto px-6 md:px-10">
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              { title: "Parcours guidés", text: "Des étapes courtes pour apprendre plus vite, sans surcharge." },
-              { title: "Pratique orientée projet", text: "Chaque cours vous rapproche d’un vrai résultat concret." },
-              { title: "Design premium", text: "Animations légères et lisibilité renforcée en clair/sombre." },
-            ].map((item) => (
-              <article
-                key={item.title}
-                className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-md hover:-translate-y-1 transition"
-              >
-                <h4 className="font-bold text-slate-900 dark:text-white">{item.title}</h4>
-                <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{item.text}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-      </SectionReveal>
 
-      <div className="[&_footer]:mt-0">
-        <PiedPage />
-      </div>
+      <div className="[&_footer]:mt-0"><PiedPage /></div>
     </div>
   );
 }

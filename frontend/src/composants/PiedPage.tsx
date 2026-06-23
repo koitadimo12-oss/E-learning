@@ -54,13 +54,12 @@ export default function PiedPage() {
               </button>
             </li>
             <li>
-              <button type="button" className="hover:text-orange-300 text-slate-300 transition-colors cursor-not-allowed text-left">
-                Bibliothèque (Bientôt)
-              </button>
-            </li>
-            <li>
-              <button type="button" className="hover:text-orange-300 text-slate-300 transition-colors cursor-not-allowed text-left">
-                Classements
+              <button
+                type="button"
+                onClick={() => navigate("/bibliotheque")}
+                className="hover:text-orange-300 text-slate-300 transition-colors cursor-pointer text-left"
+              >
+                Bibliothèque
               </button>
             </li>
           </ul>
@@ -89,7 +88,7 @@ export default function PiedPage() {
       </div>
 
       <div className="text-center py-4 bg-slate-900 text-sm text-slate-400 relative border-t border-slate-800">
-        © {new Date().getFullYear()} Kaay Niou Diang - Tous droits reserves
+        © {new Date().getFullYear()} Kaay Niou Diang - developper avec ❤️ par le groupe A.F.S.A
       </div>
     </footer>
   );

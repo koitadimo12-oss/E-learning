@@ -121,7 +121,7 @@ function keyLike(type: TypeLike, targetId: string | number) {
   return `${PREFIX}likes_${type}_${String(targetId)}`;
 }
 
-function keyVoteEtudiant(idEtudiant: number, type: TypeLike, targetId: string | number) {
+function keyVoteEtudiant(idEtudiant: string | number, type: TypeLike, targetId: string | number) {
   return `${PREFIX}vote_${idEtudiant}_${type}_${String(targetId)}`;
 }
 
@@ -136,7 +136,7 @@ export function getCompteurLikes(type: TypeLike, targetId: string | number): num
   }
 }
 
-export function aDejaLike(idEtudiant: number, type: TypeLike, targetId: string | number): boolean {
+export function aDejaLike(idEtudiant: string | number, type: TypeLike, targetId: string | number): boolean {
   try {
     return localStorage.getItem(keyVoteEtudiant(idEtudiant, type, targetId)) === "1";
   } catch {
@@ -144,7 +144,7 @@ export function aDejaLike(idEtudiant: number, type: TypeLike, targetId: string |
   }
 }
 
-export function likerUneFois(idEtudiant: number, type: TypeLike, targetId: string | number): boolean {
+export function likerUneFois(idEtudiant: string | number, type: TypeLike, targetId: string | number): boolean {
   if (aDejaLike(idEtudiant, type, targetId)) return false;
   try {
     const total = getCompteurLikes(type, targetId);

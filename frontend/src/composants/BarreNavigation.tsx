@@ -4,7 +4,7 @@ import { getThemePref, setThemePref } from "../services/stockageLocal";
 import { FiMenu, FiX, FiMoon, FiSun, FiUser, FiLogOut, FiBookOpen } from "react-icons/fi";
 
 type Props = {
-  etudiant?: { nom: string; id: number } | null;
+  etudiant?: { nom: string; id: string | number } | null;
   onDeconnexion?: () => void;
   /** Barre fixe en haut (accueil) */
   fixe?: boolean;
@@ -50,12 +50,11 @@ export default function BarreNavigation(props: Props) {
   };
 
   return (
-    <nav
-      className={`${
-        fixe ? "fixed top-0 left-0 right-0" : "sticky top-0"
-      } z-[100] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 shadow-sm transition-colors duration-300`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <nav
+        className={`sticky top-0 z-[100] w-full bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 shadow-sm transition-colors duration-300`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 sm:h-20 items-center">
           {/* Logo & Brand */}
           <Link to="/" className="flex items-center gap-3 group">
@@ -255,5 +254,7 @@ export default function BarreNavigation(props: Props) {
         </div>
       )}
     </nav>
+    {!fixe && <div className="h-16 sm:h-20"></div>}
+    </>
   );
 }

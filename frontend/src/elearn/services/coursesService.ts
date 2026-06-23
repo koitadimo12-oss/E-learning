@@ -1,44 +1,91 @@
-import { storage } from "./storage";
-import type { Course } from "../types";
+import { chargerCours, creerCours, getCoursCache, getCoursParId, modifierCours, supprimerCours } from "../../services/coursApi";
+import type { Course, CourseModule, Quiz } from "../types";
 
-function makeId(prefix: string) {
-  return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
+const emptyQuiz = (moduleId: string): Quiz => ({
+  id: `quiz-${moduleId}`,
+  moduleId,
+  timeLimitSec: 600,
+  questions: [],
+});
+
+function mapToElearnCourse(c: import("../../services/coursService").Cours): Course {
+  const modules: CourseModule[] = (c.chapitres ?? []).map((ch) => ({
+    id: String(ch.id),
+    title: ch.titre,
+    chapters: [
+      {
+        id: String(ch.id),
+        title: ch.titre,
+        contentType: "text",
+        content: ch.contenu?.join("\n") ?? "",
+      },
+    ],
+    quiz: emptyQuiz(String(ch.id)),
+  }));
+
+  return {
+    id: String(c.id),
+    trainerId: "system",
+    title: c.titre,
+    description: c.description,
+    price: 0,
+    published: true,
+    rating: 0,
+    ratingCount: 0,
+    modules,
+    finalProject: "",
+  };
 }
 
 export const coursesService = {
-  list() {
-    return storage.getCourses();
+  list(): Course[] {
+    return getCoursCache().map(mapToElearnCourse);
+  },
+
+  async refresh() {
+    await chargerCours(true);
+    return this.list();
   },
 
   getById(id: string) {
-    return storage.getCourses().find((c) => c.id === id) ?? null;
+    const row = getCoursCache().find((c) => c.id === Number(id));
+    return row ? mapToElearnCourse(row) : null;
   },
 
-  create(payload: Omit<Course, "id" | "rating" | "ratingCount">) {
-    const rows = storage.getCourses();
-    const course: Course = { ...payload, id: makeId("course"), rating: 0, ratingCount: 0 };
-    storage.setCourses([...rows, course]);
-    return course;
-  },
-
-  update(id: string, patch: Partial<Course>) {
-    const updated = storage.getCourses().map((c) => (c.id === id ? { ...c, ...patch } : c));
-    storage.setCourses(updated);
-    return updated.find((c) => c.id === id) ?? null;
-  },
-
-  remove(id: string) {
-    storage.setCourses(storage.getCourses().filter((c) => c.id !== id));
-  },
-
-  addRating(courseId: string, stars: number) {
-    const rows = storage.getCourses();
-    const next = rows.map((course) => {
-      if (course.id !== courseId) return course;
-      const total = course.rating * course.ratingCount + stars;
-      const ratingCount = course.ratingCount + 1;
-      return { ...course, ratingCount, rating: Number((total / ratingCount).toFixed(1)) };
+  async create(payload: Omit<Course, "id" | "rating" | "ratingCount">) {
+    const row = await creerCours({
+      titre: payload.title,
+      description: payload.description,
+      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600",
+      instructeur: payload.trainerId,
+      categorie: "Programmation",
+      niveau: "Debutant",
+      duree: "2h 00",
+      chapitres: [],
+      quiz: [],
     });
-    storage.setCourses(next);
+    await chargerCours(true);
+    return mapToElearnCourse(row);
+  },
+
+  async update(id: string, patch: Partial<Course>) {
+    const row = await modifierCours(Number(id), {
+      titre: patch.title,
+      description: patch.description,
+    });
+    await chargerCours(true);
+    return mapToElearnCourse(row);
+  },
+
+  async remove(id: string) {
+    await supprimerCours(Number(id));
+    await chargerCours(true);
+  },
+
+  addRating(_courseId: string, _stars: number) {
+    /* optionnel */
   },
 };
+
+// Préchargement asynchrone pour getById hors cache
+void getCoursParId;

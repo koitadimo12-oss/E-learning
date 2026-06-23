@@ -38,12 +38,16 @@ export default function ModeApprentissagePage(props: Props) {
 
   if (!etudiant) return null;
 
-  const confirmer = () => {
+  const confirmer = async () => {
     if (mode === "parcours-guide" && !parcours) {
       setError("Choisissez un parcours guide.");
       return;
     }
-    const updated = configurerApprentissageEtudiant(etudiant.id, mode, mode === "parcours-guide" ? parcours : undefined);
+    const updated = await configurerApprentissageEtudiant(
+      etudiant.id,
+      mode,
+      mode === "parcours-guide" ? parcours : undefined,
+    );
     if (!updated) {
       setError("Impossible d'enregistrer votre choix.");
       return;

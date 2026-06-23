@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
 
+/**
+ * Service IA — consomme l'API externe Mistral (https://mistral.ai).
+ * Clé API : variable d'environnement MISTRAL_API_KEY dans le fichier .env
+ */
 @Injectable()
 export class AiService {
   private mistral: Mistral;
@@ -9,12 +13,19 @@ export class AiService {
 
   constructor(private configService: ConfigService) {
     const apiKey =
-      this.configService.get<string>('MISTRAL_API_KEY') ||
-      'mCk4hsDERIq8ziYpoNL5E1qFxRIOLPCD';
-    this.mistral = new Mistral({ apiKey });
+      this.configService.get<string>('MISTRAL_API_KEY') || process.env.MISTRAL_API_KEY;
+    if (!apiKey) {
+      this.logger.warn('MISTRAL_API_KEY non configurée !');
+    }
+    this.mistral = new Mistral({ apiKey: apiKey || 'dummy-key' });
     this.logger.log('Mistral AI initialisé');
   }
 
+  /**
+   * Appel central vers l'API Mistral.
+   * @param prompt - texte envoyé au modèle
+   * @param json - si true, Mistral renvoie du JSON structuré
+   */
   private async callMistral(
     prompt: string,
     json = false,

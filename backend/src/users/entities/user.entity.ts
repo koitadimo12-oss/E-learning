@@ -1,14 +1,5 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { Role, LearningMode, ContentLanguage } from '../../common/enums';
-import { Course } from '../../courses/entities/course.entity';
+import {Column,CreateDateColumn,Entity,Index,OneToMany,PrimaryGeneratedColumn, UpdateDateColumn,} from 'typeorm';
+import { Role, LearningMode, NiveauEtude, ParcoursGuide } from '../../common/enums';
 import { Progress } from '../../progress/entities/progress.entity';
 import { Certificate } from '../../certificates/entities/certificate.entity';
 
@@ -33,8 +24,14 @@ export class User {
   @Column({ type: 'varchar', length: 20, default: LearningMode.FREE })
   modeApprentissage: LearningMode;
 
-  @Column({ type: 'varchar', length: 5, default: ContentLanguage.FRENCH })
-  languePreferee: ContentLanguage;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  niveauEtude: NiveauEtude;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  parcoursGuideChoisi: ParcoursGuide;
+
+  @Column({ type: 'boolean', default: false })
+  onboardingApprentissageTermine: boolean;
 
   @Column({ type: 'int', default: 0 })
   xp: number;
@@ -42,14 +39,17 @@ export class User {
   @Column({ type: 'int', default: 1 })
   niveau: number;
 
+  @Column({ type: 'int', default: 0 })
+  streak: number;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  lastStreakDate: string;
+
   // CORRECTION ICI :
   // On retire 'default' du décorateur @Column pour MySQL
   // On initialise la valeur par défaut directement en TypeScript
   @Column({ type: 'simple-json' })
   badges: string[] = [];
-
-  @OneToMany(() => Course, (cours) => cours.auteur)
-  coursCrees: Course[];
 
   @OneToMany(() => Progress, (progression) => progression.utilisateur)
   progressions: Progress[];

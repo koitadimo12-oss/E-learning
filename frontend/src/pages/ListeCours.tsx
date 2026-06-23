@@ -5,7 +5,9 @@ import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
 import CarteCours from "../composants/CarteCours";
 import BarreRecherche from "../composants/BarreRecherche";
-import { listeCours } from "../services/coursService";
+import { getCoursCache } from "../services/coursApi";
+import { chargerCours } from "../services/coursApi";
+import type { Cours } from "../services/coursService";
 export default function ListeCours(props: any) {
   const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
@@ -13,6 +15,11 @@ export default function ListeCours(props: any) {
   const [recherche, setRecherche] = useState("");
   const [categorie, setCategorie] = useState("Toutes");
   const [niveau, setNiveau] = useState("Tous");
+  const [listeCours, setListeCours] = useState<Cours[]>(() => getCoursCache());
+
+  useEffect(() => {
+    chargerCours().then(setListeCours);
+  }, []);
 
   useEffect(() => {
     const uni = searchParams.get("university");
@@ -21,10 +28,10 @@ export default function ListeCours(props: any) {
 
   const categories = useMemo(
     () => ["Toutes", ...new Set(listeCours.map((c) => c.categorie))],
-    []
+    [listeCours]
   );
 
-  const niveaux = useMemo(() => ["Tous", ...new Set(listeCours.map((c) => c.niveau))], []);
+  const niveaux = useMemo(() => ["Tous", ...new Set(listeCours.map((c) => c.niveau))], [listeCours]);
 
   const coursFiltres = useMemo(() => {
     const coursAvecProgression = listeCours.map((cours) => {
@@ -41,7 +48,7 @@ export default function ListeCours(props: any) {
       const matchNiveau = niveau === "Tous" || cours.niveau === niveau;
       return matchRecherche && matchCategorie && matchNiveau;
     });
-  }, [recherche, categorie, niveau, etudiant]);
+  }, [recherche, categorie, niveau, etudiant, listeCours]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">

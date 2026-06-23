@@ -47,6 +47,7 @@ export class AuthService {
       email: emailFormatte,
       motDePasseHash: hash,
       role: role,
+      niveauEtude: dto.niveauEtude,
     });
     
     // On sauvegarde dans la base de données
@@ -81,5 +82,23 @@ export class AuthService {
     // On génère le token JWT
     const token = await this.jwt.signAsync({ sub: utilisateur.id, role: utilisateur.role });
     return { accessToken: token, user: this.sanitizeUser(utilisateur) };
+  }
+
+  /** Réinitialisation du mot de passe (email doit exister en base) */
+  async resetPassword(email: string, motDePasse: string) {
+    const emailFormatte = email.trim().toLowerCase();
+    const utilisateur = await this.users
+      .createQueryBuilder('u')
+      .addSelect('u.motDePasseHash')
+      .where('u.email = :email', { email: emailFormatte })
+      .getOne();
+
+    if (!utilisateur) {
+      throw new BadRequestException('Aucun compte trouvé avec cet email.');
+    }
+
+    utilisateur.motDePasseHash = await bcrypt.hash(motDePasse, 10);
+    await this.users.save(utilisateur);
+    return { message: 'Mot de passe mis à jour. Vous pouvez vous connecter.' };
   }
 }

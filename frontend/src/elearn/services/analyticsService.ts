@@ -20,7 +20,7 @@ export const analyticsService = {
 
 export function studentDashboardStats(userId: string) {
   const enrolled = enrollmentsService.listByUser(userId);
-  const avgScore = quizResultsService.averageScore(userId);
+  const avgScore = quizResultsService.averageScore(userId, "");
   const completed = enrolled.filter((en) => {
     const course = coursesService.getById(en.courseId);
     const passed = quizResultsService.listByUser(userId).filter((r) => r.courseId === en.courseId && r.passed);

@@ -1,45 +1,49 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { authService } from "../services/authService";
 import { usersService } from "../services/usersService";
 import type { User } from "../types";
 
 type AuthContextValue = {
   user: User | null;
-  login: (email: string, password: string) => void;
-  registerStudent: (name: string, email: string, password: string) => void;
-  registerTrainer: (name: string, email: string, password: string) => void;
+  login: (email: string, password: string) => Promise<void>;
+  registerStudent: (name: string, email: string, password: string) => Promise<void>;
+  registerTrainer: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  refreshUser: () => void;
-  grantXp: (amount: number) => void;
+  refreshUser: () => Promise<void>;
+  grantXp: (amount: number) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(authService.currentUser());
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    void authService.currentUser().then(setUser);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      login(email, password) {
-        setUser(authService.login(email, password));
+      async login(email, password) {
+        setUser(await authService.login(email, password));
       },
-      registerStudent(name, email, password) {
-        setUser(authService.registerStudent(name, email, password));
+      async registerStudent(name, email, password) {
+        setUser(await authService.registerStudent(name, email, password));
       },
-      registerTrainer(name, email, password) {
-        authService.registerTrainer(name, email, password);
+      async registerTrainer(name, email, password) {
+        await authService.registerTrainer(name, email, password);
       },
       logout() {
         authService.logout();
         setUser(null);
       },
-      refreshUser() {
-        setUser(authService.currentUser());
+      async refreshUser() {
+        setUser(await authService.currentUser());
       },
-      grantXp(amount) {
+      async grantXp(amount) {
         if (!user) return;
-        const updated = usersService.grantXp(user.id, amount);
+        const updated = await usersService.grantXp(user.id, amount);
         if (updated) setUser(updated);
       },
     }),

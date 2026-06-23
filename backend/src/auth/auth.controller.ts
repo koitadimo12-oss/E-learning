@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './jwt.guard';
 import { CurrentUser } from '../common/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -25,6 +26,12 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  @ApiOperation({ summary: 'Réinitialiser le mot de passe (email enregistré)' })
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.auth.resetPassword(dto.email, dto.motDePasse);
   }
 
   // Route pour récupérer son propre profil (GET /auth/me)

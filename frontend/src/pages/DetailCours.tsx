@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
-import { listeCours, type Cours } from "../services/coursService";
+import { getCoursParId } from "../services/coursApi";
+import type { Cours } from "../services/coursService";
 import { useLanguage } from "../elearn/i18n/LanguageContext";
-import { getAiLesson, type AiLessonResponse } from "../services/aiLessonApi";
+import { getAiLesson, askAiSimplify, askAiExample, type AiLessonResponse } from "../services/aiLessonApi";
 import {
   getEtudiant,
   mettreAJourChapitresCompletes,
@@ -23,7 +24,7 @@ import {
   setNotesCours,
   toggleFavoriCours,
 } from "../services/stockageLocal";
-import { ajouterCommentaireCours, getCommentairesCours } from "../services/commentairesService";
+
 
 const SEUIL_PROGRESSION_CONTENU = 0.85;
 const SEUIL_REUSSITE_QUIZ = 0.5;
@@ -45,7 +46,7 @@ export default function DetailCours(props: any) {
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const cours: Cours | undefined = listeCours.find((c) => c.id === Number(id));
+  const [cours, setCours] = useState<Cours | undefined>(undefined);
   const visiteur = !etudiant;
   const { lang } = useLanguage();
 
@@ -56,8 +57,7 @@ export default function DetailCours(props: any) {
   const [indexChapitre, setIndexChapitre] = useState(0);
   const [notes, setNotes] = useState("");
   const [favori, setFavori] = useState(false);
-  const [commentaire, setCommentaire] = useState("");
-  const [commentsRev, setCommentsRev] = useState(0);
+
   const [likeRev, setLikeRev] = useState(0);
   const [livrableProjet, setLivrableProjet] = useState("");
   const [projetMessage, setProjetMessage] = useState("");
@@ -65,15 +65,23 @@ export default function DetailCours(props: any) {
   const [aiLesson, setAiLesson] = useState<AiLessonResponse | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiModal, setAiModal] = useState<{ isOpen: boolean; title: string; content: string }>({
+    isOpen: false, title: "", content: "",
+  });
   const voiceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const chapitreCourant = cours ? cours.chapitres[indexChapitre] : undefined;
 
-  const rafraichirEtudiant = useCallback(() => {
+  const rafraichirEtudiant = useCallback(async () => {
     if (!etudiant || !setEtudiant) return;
-    const frais = getEtudiant(etudiant.id);
+    const frais = await getEtudiant(etudiant.id);
     if (frais) setEtudiant(frais);
   }, [etudiant, setEtudiant]);
+
+  useEffect(() => {
+    if (!id) return;
+    getCoursParId(Number(id)).then((c) => setCours(c ?? undefined));
+  }, [id]);
 
   useEffect(() => {
     if (!cours) return;
@@ -81,9 +89,10 @@ export default function DetailCours(props: any) {
     setNotes(getNotesCours(cours.id));
     setFavori(estFavori(cours.id));
     if (etudiant) {
-      toucherStreak(etudiant.id);
-      const frais = getEtudiant(etudiant.id);
-      if (frais && setEtudiant) setEtudiant(frais);
+      void toucherStreak(etudiant.id);
+      void getEtudiant(etudiant.id).then((frais) => {
+        if (frais && setEtudiant) setEtudiant(frais);
+      });
     }
   }, [cours?.id, etudiant?.id, setEtudiant]);
 
@@ -135,7 +144,7 @@ export default function DetailCours(props: any) {
     }
   };
 
-  const speak = (text: string) => {
+  const _speak = (text: string) => {
     stopVoice();
     if (!("speechSynthesis" in window)) return;
     const u = new SpeechSynthesisUtterance(text);
@@ -145,6 +154,7 @@ export default function DetailCours(props: any) {
     voiceRef.current = u;
     window.speechSynthesis.speak(u);
   };
+  void _speak; // conservée pour usage futur (TTS)
 
   const idsChapitresValides = useMemo(
     () => new Set((cours?.chapitres ?? []).map((ch) => ch.id)),
@@ -171,14 +181,13 @@ export default function DetailCours(props: any) {
   }).length;
   const indexDebloque = Math.min(modulesValides, Math.max(0, parcoursIds.length - 1));
   const moduleBloque = estParcoursGuide && positionModule >= 0 && positionModule > indexDebloque;
-  const quizInteractif = estParcoursGuide ? nbChapitresLus >= chapitresRequisPourQuiz : true;
+  const quizInteractif = nbChapitresLus >= (cours?.chapitres.length ?? 0);
 
   const persisterChapitres = useCallback(
     (ids: number[]) => {
       if (!cours) return;
       if (etudiant) {
-        mettreAJourChapitresCompletes(etudiant.id, cours.id, ids);
-        rafraichirEtudiant();
+        void mettreAJourChapitresCompletes(etudiant.id, cours.id, ids).then(() => rafraichirEtudiant());
       } else {
         sessionStorage.setItem(cleChapitresInvite(cours.id), JSON.stringify(ids));
       }
@@ -194,10 +203,7 @@ export default function DetailCours(props: any) {
     persisterChapitres(next);
   };
 
-  const commentaires = useMemo(() => {
-    void commentsRev;
-    return cours ? getCommentairesCours(cours.id) : [];
-  }, [cours, commentsRev]);
+
   const likesLecon = useMemo(() => {
     void likeRev;
     return cours ? getCompteurLikes("cours", cours.id) : 0;
@@ -206,6 +212,42 @@ export default function DetailCours(props: any) {
     void likeRev;
     return cours ? getCompteurLikes("formateur", cours.instructeur) : 0;
   }, [cours, likeRev]);
+
+  const handleSimplify = async () => {
+    if (!chapitreCourant) return;
+    setAiLoading(true);
+    try {
+      const res = await askAiSimplify({
+        topic: chapitreCourant.titre,
+        context: cours?.titre,
+        lang,
+      });
+      setAiModal({ isOpen: true, title: "Expliquer simplement", content: res.response });
+    } catch (e: any) {
+      setAiError(e?.message ?? "Erreur IA");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleExample = async () => {
+    if (!chapitreCourant) return;
+    setAiLoading(true);
+    try {
+      const res = await askAiExample({
+        topic: chapitreCourant.titre,
+        context: cours?.titre,
+        lang,
+      });
+      setAiModal({ isOpen: true, title: "Exemple concret", content: res.response });
+    } catch (e: any) {
+      setAiError(e?.message ?? "Erreur IA");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+
 
   if (!cours) {
     return (
@@ -255,8 +297,7 @@ export default function DetailCours(props: any) {
 
     setQuizReussi(true);
     if (etudiant) {
-      recompenserQuizReussi(etudiant.id, cours.id);
-      rafraichirEtudiant();
+      void recompenserQuizReussi(etudiant.id, cours.id).then(() => rafraichirEtudiant());
     }
   };
 
@@ -439,7 +480,7 @@ export default function DetailCours(props: any) {
                   <h2 className="text-xl font-semibold">{chapitreCourant.titre}</h2>
                   <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Durée indicative : {chapitreCourant.duree}</p>
                 </div>
-                <div className="aspect-video max-w-3xl mx-auto bg-black rounded-xl overflow-hidden">
+                <div className="aspect-video max-w-3xl mx-auto bg-black rounded-xl overflow-hidden relative group">
                   <iframe
                     width="100%"
                     height="100%"
@@ -449,85 +490,43 @@ export default function DetailCours(props: any) {
                     className="w-full h-full"
                   />
                 </div>
+
+                {!visiteur && (
+                  <div className="px-4 md:px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex flex-wrap gap-2 justify-center bg-slate-50/50 dark:bg-slate-950/50">
+                    <button
+                      onClick={handleSimplify}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition shadow-sm"
+                    >
+                      <span>💡</span> Expliquer simplement
+                    </button>
+                    <button
+                      onClick={handleExample}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 transition shadow-sm"
+                    >
+                      <span>🚀</span> Donner un exemple
+                    </button>
+                    <p className="w-full text-center text-[11px] text-slate-400 mt-1">
+                      💬 Pour poser une question libre, utilisez le chatbot IA en bas à droite
+                    </p>
+                  </div>
+                )}
+
                 {!visiteur ? (
                   <div className="p-4 md:p-6 space-y-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">Texte explicatif (IA)</h3>
-                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                          Transcript simulé + explication structurée (résumé, points clés, exemple, approfondissement).
-                        </p>
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">Explication approfondie (Mistral AI)</h3>
+                        {aiLoading && <span className="text-xs text-blue-600 animate-pulse font-bold">Génération en cours...</span>}
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => (aiLesson ? speak(aiLesson.content.summary) : null)}
-                          disabled={!aiLesson}
-                          className="px-3 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold disabled:opacity-50"
-                        >
-                          ▶ Voix off (résumé)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => (aiLesson ? speak(aiLesson.content.deepDive) : null)}
-                          disabled={!aiLesson}
-                          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold disabled:opacity-50"
-                        >
-                          ▶ Voix off (détails)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={stopVoice}
-                          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold"
-                        >
-                          ⏹ Stop
-                        </button>
-                      </div>
+                      
+                      {aiError ? (
+                        <p className="text-sm text-red-500 italic">{aiError}</p>
+                      ) : (
+                        <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                          {aiLesson?.response || "Chargement de l'explication personnalisée..."}
+                        </div>
+                      )}
                     </div>
-
-                    {aiError && (
-                      <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 p-4">
-                        <p className="font-semibold text-red-800 dark:text-red-200">{aiError}</p>
-                      </div>
-                    )}
-
-                    {!aiError && (
-                      <div className="grid lg:grid-cols-2 gap-4">
-                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 p-5">
-                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Résumé</p>
-                          <p className={`mt-2 font-semibold ${aiLoading ? "opacity-60" : ""}`}>{aiLesson?.content.summary ?? "Génération..."}</p>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 p-5">
-                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Points clés</p>
-                          <ul className={`mt-2 list-disc pl-5 text-sm text-slate-700 dark:text-slate-300 space-y-1 ${aiLoading ? "opacity-60" : ""}`}>
-                            {(aiLesson?.content.keyPoints ?? ["Génération...", "…"]).map((p) => (
-                              <li key={p}>{p}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Exemple</p>
-                          <p className={`mt-2 text-sm text-slate-700 dark:text-slate-300 ${aiLoading ? "opacity-60" : ""}`}>
-                            {aiLesson?.content.example ?? "Génération..."}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Explication approfondie</p>
-                          <p className={`mt-2 text-sm text-slate-700 dark:text-slate-300 ${aiLoading ? "opacity-60" : ""}`}>
-                            {aiLesson?.content.deepDive ?? "Génération..."}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <details className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-                      <summary className="cursor-pointer font-semibold text-slate-900 dark:text-white">
-                        Transcript (simulé)
-                      </summary>
-                      <p className={`mt-3 text-sm text-slate-700 dark:text-slate-300 leading-relaxed ${aiLoading ? "opacity-60" : ""}`}>
-                        {aiLesson?.transcript ?? "Génération..."}
-                      </p>
-                    </details>
                   </div>
                 ) : (
                   <div className="p-4 md:p-6">
@@ -586,13 +585,14 @@ export default function DetailCours(props: any) {
                             setProjetMessage("Ajoutez d'abord une description de votre projet final.");
                             return;
                           }
-                          const ok = validerProjetFinal(etudiant.id, cours.id);
-                          if (!ok) {
-                            setProjetMessage("Le projet ne peut pas etre valide tant que le cours n'est pas termine.");
-                            return;
-                          }
-                          setProjetMessage("Projet final valide. Votre certificat est maintenant disponible.");
-                          rafraichirEtudiant();
+                          void validerProjetFinal(etudiant.id, cours.id).then((ok) => {
+                            if (!ok) {
+                              setProjetMessage("Le projet ne peut pas etre valide tant que le cours n'est pas termine.");
+                              return;
+                            }
+                            setProjetMessage("Projet final valide. Votre certificat est maintenant disponible.");
+                            void rafraichirEtudiant();
+                          });
                         }}
                         className="mt-3 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition"
                       >
@@ -629,44 +629,7 @@ export default function DetailCours(props: any) {
               />
             </div>
 
-            <div className="mt-10">
-              <h2 className="text-lg font-semibold">Commentaires</h2>
-              <div className="mt-3 space-y-3">
-                {commentaires.map((c) => (
-                  <div key={c.id} className="rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-sm">
-                    <p className="font-semibold">
-                      {c.auteur}
-                    </p>
-                    <p className="mt-1 text-gray-700 dark:text-slate-300">{c.texte}</p>
-                  </div>
-                ))}
-              </div>
-              {etudiant ? (
-                <div className="mt-4 flex flex-col gap-2">
-                  <textarea
-                    value={commentaire}
-                    onChange={(e) => setCommentaire(e.target.value)}
-                    className="rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 p-3 text-sm min-h-[80px]"
-                    placeholder="Ajouter un commentaire…"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const t = commentaire.trim();
-                      if (!t) return;
-                      ajouterCommentaireCours(cours.id, etudiant.nom, t);
-                      setCommentaire("");
-                      setCommentsRev((x) => x + 1);
-                    }}
-                    className="self-start px-4 py-2 rounded-xl bg-gray-900 dark:bg-slate-800 text-white text-sm font-semibold"
-                  >
-                    Publier
-                  </button>
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-gray-500">Connectez-vous pour commenter.</p>
-              )}
-            </div>
+
           </div>
         </div>
 
@@ -687,7 +650,17 @@ export default function DetailCours(props: any) {
             className={`mt-6 relative rounded-2xl transition ${(!quizInteractif || visiteur) ? "opacity-60" : ""}`}
             aria-disabled={!quizInteractif || visiteur}
           >
-            {(!quizInteractif || visiteur) && <div className="absolute inset-0 z-10 cursor-not-allowed rounded-2xl bg-gray-900/5" aria-hidden />}
+            {(!quizInteractif || visiteur) && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-slate-900/40 backdrop-blur-sm px-6 text-center">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl max-w-sm">
+                   <p className="text-3xl mb-4">🔒</p>
+                   <p className="font-bold text-slate-900 dark:text-white">Quiz verrouillé</p>
+                   <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                     Vous devez terminer <strong>toutes les leçons</strong> ({cours.chapitres.length}) pour débloquer le quiz final et valider ce module.
+                   </p>
+                </div>
+              </div>
+            )}
 
             <div className={`grid md:grid-cols-2 gap-6 ${(!quizInteractif || visiteur) ? "pointer-events-none select-none" : ""}`}>
               {cours.quiz.map((q, i) => (
@@ -775,6 +748,26 @@ export default function DetailCours(props: any) {
       </section>
 
       <PiedPage />
+
+      {/* Modales IA : Expliquer simplement & Exemple concret */}
+      {aiModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-5 text-white flex justify-between items-center">
+              <h3 className="font-bold text-lg">{aiModal.title}</h3>
+              <button onClick={() => setAiModal({ ...aiModal, isOpen: false })} className="text-white/80 hover:text-white">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 max-h-[60vh] overflow-y-auto text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+              {aiModal.content}
+            </div>
+            <div className="p-4 bg-slate-50 dark:bg-slate-950/50 flex justify-end">
+              <button onClick={() => setAiModal({ ...aiModal, isOpen: false })} className="px-5 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-sm">Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

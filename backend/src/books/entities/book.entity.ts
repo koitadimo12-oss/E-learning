@@ -20,4 +20,10 @@ export class Book {
 
   @Column()
   pdfUrl: string;
+
+  @Column({ nullable: true })
+  category: string;
+
+  @Column({ nullable: true })
+  coverUrl: string;
 }

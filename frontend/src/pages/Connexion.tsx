@@ -1,14 +1,17 @@
 import { useState } from "react";
 import type { ChangeEvent, FormEvent, SyntheticEvent } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { connexionEtudiant } from "../services/etudiantService";
+import { authApi } from "../services/authApi";
 import ChampSaisie from "../composants/ChampSaisie";
 
 export default function Connexion(props: any) {
   const { setEtudiant } = props;
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = (location.state as { redirect?: string } | null)?.redirect ?? "/";
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -16,12 +19,16 @@ export default function Connexion(props: any) {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
-  const [profil, setProfil] = useState("Etudiant");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState("");
   const [resetError, setResetError] = useState("");
 
-  const handleSubmit = (e?: FormEvent) => {
+  const handleSubmit = async (e?: FormEvent) => {
     if (e) e.preventDefault();
 
     if (!formData.email || !formData.password) {
@@ -29,27 +36,57 @@ export default function Connexion(props: any) {
       return;
     }
 
-    const user = connexionEtudiant(formData.email, formData.password);
-    if (!user) {
-      setError("Aucun compte trouve. Inscrivez-vous d'abord.");
-      return;
+    setLoading(true);
+    try {
+      const user = await connexionEtudiant(formData.email, formData.password);
+      if (!user) {
+        setError("Aucun compte trouve. Inscrivez-vous d'abord.");
+        return;
+      }
+      setError("");
+      setEtudiant(user);
+      navigate(redirectTo);
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message ?? "Connexion impossible.";
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
-
-    setError("");
-    setEtudiant(user);
-    navigate("/");
   };
 
-  const handleReset = () => {
-    if (profil !== "Etudiant") {
-      setResetError("Seuls les étudiants peuvent réinitialiser leur mot de passe.");
+  const handleReset = async () => {
+    setResetError("");
+    setResetSuccess("");
+    if (!resetEmail.trim()) {
+      setResetError("Indiquez votre adresse email.");
       return;
     }
-    setResetError("");
-    alert(`Réinitialisation pour ${resetEmail} réussie`);
-    setShowModal(false);
-    setResetEmail("");
-    setProfil("Etudiant");
+    if (!resetPassword || resetPassword.length < 6) {
+      setResetError("Le mot de passe doit contenir au moins 6 caractères.");
+      return;
+    }
+    if (resetPassword !== resetConfirm) {
+      setResetError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const res = await authApi.resetPassword(resetEmail.trim(), resetPassword);
+      setResetSuccess(res.message);
+      setFormData((prev) => ({ ...prev, email: resetEmail.trim() }));
+      setResetPassword("");
+      setResetConfirm("");
+      setTimeout(() => {
+        setShowModal(false);
+        setResetSuccess("");
+        setResetEmail("");
+      }, 2500);
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message ?? "Réinitialisation impossible.";
+      setResetError(msg);
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
@@ -136,7 +173,7 @@ export default function Connexion(props: any) {
                 type="submit"
                 className="w-full mt-5 py-3 rounded-full bg-orange-500 text-white font-bold hover:bg-orange-600 transition text-center cursor-pointer"
               >
-                Se connecter
+                {loading ? "Connexion..." : "Se connecter"}
               </button>
 
               <div className="flex flex-col items-center text-sm text-gray-500 dark:text-slate-400 mt-4 gap-2">
@@ -146,9 +183,6 @@ export default function Connexion(props: any) {
                     S’inscrire
                   </Link>
                 </div>
-                <Link to="/connexion-formateur" className="text-blue-600 font-medium hover:underline">
-                  Espace formateur
-                </Link>
               </div>
             </form>
           </div>
@@ -167,24 +201,15 @@ export default function Connexion(props: any) {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl w-[380px] border border-gray-200 dark:border-slate-700">
-            <h3 className="text-lg font-semibold mb-3">Réinitialisation</h3>
-
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Profil :</label>
-            <select
-              name="profil"
-              value={profil}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => setProfil(e.target.value)}
-              className="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 rounded mt-1 mb-3"
-            >
-              <option value="Etudiant">Étudiant</option>
-              <option value="Personnel">Personnel</option>
-              <option value="Tuteur">Tuteur</option>
-            </select>
+        <div className="fixed inset-0 z-[10000] bg-black/60 flex justify-center items-center p-4">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl w-full max-w-[400px] border border-gray-200 dark:border-slate-700">
+            <h3 className="text-lg font-semibold mb-1">Mot de passe oublié</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+              Entrez l&apos;email de votre compte et choisissez un nouveau mot de passe.
+            </p>
 
             <ChampSaisie
-              label="Email"
+              label="Email du compte"
               type="email"
               name="resetEmail"
               value={resetEmail}
@@ -192,14 +217,46 @@ export default function Connexion(props: any) {
               onChange={(e: ChangeEvent<HTMLInputElement>) => setResetEmail(e.target.value)}
             />
 
-            {resetError && <p className="text-red-500 text-xs mt-2">{resetError}</p>}
+            <div className="mt-3">
+              <ChampSaisie
+                label="Nouveau mot de passe"
+                type="password"
+                name="resetPassword"
+                value={resetPassword}
+                placeholder="6 caractères minimum"
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setResetPassword(e.target.value)}
+              />
+            </div>
 
-            <div className="flex justify-end mt-4 gap-2">
-              <button type="button" onClick={() => setShowModal(false)}>
+            <div className="mt-3">
+              <ChampSaisie
+                label="Confirmer le mot de passe"
+                type="password"
+                name="resetConfirm"
+                value={resetConfirm}
+                placeholder="Répétez le mot de passe"
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setResetConfirm(e.target.value)}
+              />
+            </div>
+
+            {resetError && <p className="text-red-500 text-xs mt-2">{resetError}</p>}
+            {resetSuccess && <p className="text-green-600 text-sm mt-2 font-medium">{resetSuccess}</p>}
+
+            <div className="flex justify-end mt-5 gap-2">
+              <button
+                type="button"
+                onClick={() => { setShowModal(false); setResetError(""); setResetSuccess(""); }}
+                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:hover:bg-slate-800"
+              >
                 Annuler
               </button>
-              <button type="button" onClick={handleReset} className="px-4 py-2 bg-blue-500 text-white rounded">
-                Valider
+              <button
+                type="button"
+                onClick={() => void handleReset()}
+                disabled={resetLoading}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-60"
+              >
+                {resetLoading ? "Mise à jour…" : "Réinitialiser"}
               </button>
             </div>
           </div>

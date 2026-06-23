@@ -1,11 +1,5 @@
 // Cette entité stocke les certificats de réussite des étudiants.
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import {Column,CreateDateColumn,Entity,ManyToOne,PrimaryGeneratedColumn,} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Course } from '../../courses/entities/course.entity';
 

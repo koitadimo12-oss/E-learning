@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { listeCours, type Cours } from "../services/coursService";
+import { getCoursCache, chargerCours } from "../services/coursApi";
+import type { Cours } from "../services/coursService";
 import type { Etudiant } from "../services/etudiantService";
 import { genererCertificatPdf } from "../services/certificatService";
 import { getParcoursMeta } from "../services/parcoursService";
@@ -14,6 +15,11 @@ import PiedPage from "../composants/PiedPage";
 export default function Profil(props: any) {
   const { etudiant, onDeconnexion } = props;
   const navigate = useNavigate();
+  const [listeCours, setListeCours] = useState<Cours[]>(() => getCoursCache());
+
+  useEffect(() => {
+    chargerCours().then(setListeCours);
+  }, []);
 
   const coursEtudiant = useMemo((): Cours[] => {
     return etudiant.coursSuivis
@@ -23,7 +29,7 @@ export default function Profil(props: any) {
         return { ...c, progression: cs.progression };
       })
       .filter(Boolean) as Cours[];
-  }, [etudiant]);
+  }, [etudiant, listeCours]);
 
   const moyenne = Math.round(
     etudiant.coursSuivis.reduce((acc: number, cs: CoursSuivi) => acc + cs.progression, 0) / Math.max(1, listeCours.length)

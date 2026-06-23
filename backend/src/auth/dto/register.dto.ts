@@ -1,5 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
-import { Role } from '../../common/enums';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional } from 'class-validator';
+import { Role, NiveauEtude } from '../../common/enums';
 import { ApiProperty } from '@nestjs/swagger';
 
 // DTO (Data Transfer Object) pour l'inscription d'un nouvel utilisateur
@@ -21,6 +21,10 @@ export class RegisterDto {
   motDePasse: string;
 
   @ApiProperty({ enum: Role, default: Role.STUDENT })
-  @IsNotEmpty()
-  role: Role;
+  @IsOptional()
+  role?: Role;
+
+  @ApiProperty({ enum: NiveauEtude, required: false })
+  @IsOptional()
+  niveauEtude?: NiveauEtude;
 }

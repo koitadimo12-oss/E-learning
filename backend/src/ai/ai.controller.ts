@@ -1,119 +1,76 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import { AiService } from './ai.service';
+import { AiChatDto } from './dto/ai-chat.dto';
+import { AiLessonDto } from './dto/ai-lesson.dto';
+import { AiAdviceDto } from './dto/ai-advice.dto';
+import { AiGameDto } from './dto/ai-game.dto';
+import { AiQuizDto } from './dto/ai-quiz.dto';
 
+/**
+ * API IA — consomme l'API externe Mistral (mistral-small-latest).
+ * Utilisée par le chatbot, les leçons IA et les mini-jeux du frontend.
+ */
+@ApiTags('Intelligence artificielle (Mistral)')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('ai')
 export class AiController {
   constructor(private readonly ai: AiService) {}
 
+  @ApiOperation({ summary: 'Chat avec le tuteur IA Mistral' })
   @Post('chat')
-  chat(@Body() body: { message: string; context?: string; lang?: string }) {
-    return this.ai.chat({ message: body.message, context: body.context, lang: body.lang });
+  chat(@Body() body: AiChatDto) {
+    return this.ai.chat(body);
   }
 
+  @ApiOperation({ summary: 'Explication approfondie d\'un chapitre' })
   @Post('lesson')
-  lesson(
-    @Body()
-    body: {
-      lang?: string;
-      courseTitle?: string;
-      lessonTitle?: string;
-      youtubeUrl?: string;
-    },
-  ) {
-    return this.ai.lesson({
-      lang: body.lang,
-      courseTitle: body.courseTitle,
-      lessonTitle: body.lessonTitle,
-      youtubeUrl: body.youtubeUrl,
-    });
+  lesson(@Body() body: AiLessonDto) {
+    return this.ai.lesson(body);
   }
 
   @Post('simplify')
-  simplify(
-    @Body() body: { topic: string; context?: string; lang?: string },
-  ) {
-    return this.ai.simplify({ topic: body.topic, context: body.context, lang: body.lang });
+  simplify(@Body() body: { topic: string; context?: string; lang?: string }) {
+    return this.ai.simplify(body);
   }
 
   @Post('example')
-  example(
-    @Body() body: { topic: string; context?: string; lang?: string },
-  ) {
-    return this.ai.example({ topic: body.topic, context: body.context, lang: body.lang });
+  example(@Body() body: { topic: string; context?: string; lang?: string }) {
+    return this.ai.example(body);
   }
 
   @Post('summary')
   summary(@Body() body: { title?: string; text?: string; lang?: string }) {
-    return this.ai.summary({ title: body.title, text: body.text, lang: body.lang });
+    return this.ai.summary(body);
   }
 
+  @ApiOperation({ summary: 'Conseils après un quiz' })
   @Post('advice')
-  advice(
-    @Body()
-    body: {
-      lastScore?: number;
-      topic?: string;
-      lang?: string;
-      answers?: any;
-    },
-  ) {
-    return this.ai.advice({
-      lastScore: body.lastScore,
-      topic: body.topic,
-      lang: body.lang,
-      answers: body.answers,
-    });
+  advice(@Body() body: AiAdviceDto) {
+    return this.ai.advice(body);
   }
 
   @Post('recommend')
   recommend(@Body() body: { lastScore?: number; domains?: string[] }) {
-    return this.ai.recommend({ lastScore: body.lastScore, domains: body.domains });
+    return this.ai.recommend(body);
   }
 
+  @ApiOperation({ summary: 'Générer un quiz avec Mistral' })
   @Post('quiz')
-  quiz(
-    @Body()
-    body: {
-      lang?: string;
-      topic?: string;
-      count?: number;
-      difficulty?: number;
-    },
-  ) {
-    return this.ai.quiz({
-      lang: body.lang,
-      topic: body.topic,
-      count: body.count,
-      difficulty: body.difficulty,
-    });
+  quiz(@Body() body: AiQuizDto) {
+    return this.ai.quiz(body);
   }
 
+  @ApiOperation({ summary: 'Mini-jeu pédagogique généré par IA' })
   @Post('game')
-  game(
-    @Body()
-    body: {
-      lang?: string;
-      topic?: string;
-      lastScore?: number;
-      level?: number;
-    },
-  ) {
-    return this.ai.game({
-      lang: body.lang,
-      topic: body.topic,
-      lastScore: body.lastScore,
-      level: body.level,
-    });
+  game(@Body() body: AiGameDto) {
+    return this.ai.game(body);
   }
 
   @Post('daily-game')
-  dailyGame(
-    @Body() body: { coursesTitles: string[]; level: number; lang?: string },
-  ) {
-    return this.ai.dailyGame({
-      coursesTitles: body.coursesTitles,
-      level: body.level,
-      lang: body.lang,
-    });
+  dailyGame(@Body() body: { coursesTitles: string[]; level: number; lang?: string }) {
+    return this.ai.dailyGame(body);
   }
 }

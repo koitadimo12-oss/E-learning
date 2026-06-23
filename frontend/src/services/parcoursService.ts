@@ -1,4 +1,4 @@
-import { listeCours } from "./coursService";
+import { getCoursCache } from "./coursApi";
 import type { ParcoursGuide } from "./etudiantService";
 
 const parcoursMeta: Record<ParcoursGuide, { titre: string; motsCles: string[] }> = {
@@ -20,6 +20,7 @@ export function getParcoursMeta(id: ParcoursGuide) {
 export function getParcoursCoursIds(id?: ParcoursGuide) {
   if (!id) return [];
   const config = parcoursMeta[id];
+  const listeCours = getCoursCache();
   const prioritaire = listeCours
     .filter((c) => config.motsCles.some((k) => (c.badge ?? "").toLowerCase().includes(k.toLowerCase())))
     .map((c) => c.id);
