@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
+import axios from 'axios';
+import * as https from 'https';
 
 /**
  * Service IA — consomme l'API externe Mistral (https://mistral.ai).
@@ -9,16 +11,73 @@ import { Mistral } from '@mistralai/mistralai';
 @Injectable()
 export class AiService {
   private mistral: Mistral;
+  private readonly apiKey: string;
+  private readonly tlsInsecure: boolean;
+  private readonly insecureAgent = new https.Agent({ rejectUnauthorized: false });
   private readonly logger = new Logger(AiService.name);
 
   constructor(private configService: ConfigService) {
-    const apiKey =
-      this.configService.get<string>('MISTRAL_API_KEY') || process.env.MISTRAL_API_KEY;
-    if (!apiKey) {
+    this.apiKey =
+      this.configService.get<string>('MISTRAL_API_KEY') ||
+      process.env.MISTRAL_API_KEY ||
+      '';
+    this.tlsInsecure =
+      this.configService.get<string>('MISTRAL_TLS_INSECURE') === '1';
+    if (!this.apiKey) {
       this.logger.warn('MISTRAL_API_KEY non configurée !');
     }
-    this.mistral = new Mistral({ apiKey: apiKey || 'dummy-key' });
+    this.mistral = new Mistral({ apiKey: this.apiKey || 'dummy-key' });
+    if (this.tlsInsecure) {
+      this.logger.warn(
+        'MISTRAL_TLS_INSECURE=1 — contournement SSL actif (dev local uniquement, jamais en production)',
+      );
+    }
     this.logger.log('Mistral AI initialisé');
+  }
+
+  /** Extrait le message d'erreur complet (SDK Mistral imbrique souvent la cause réelle). */
+  private formatMistralError(e: unknown): string {
+    const parts: string[] = [];
+    let cur: unknown = e;
+    for (let i = 0; i < 5 && cur; i++) {
+      if (cur instanceof Error) {
+        parts.push(cur.message);
+        if ((cur as NodeJS.ErrnoException).code) {
+          parts.push(String((cur as NodeJS.ErrnoException).code));
+        }
+        cur = cur.cause;
+      } else {
+        parts.push(String(cur));
+        break;
+      }
+    }
+    return parts.join(' | ');
+  }
+
+  /** Appel HTTP direct (axios) — permet de contourner un certificat SSL pas encore valide en dev. */
+  private async requestMistralHttp(
+    prompt: string,
+    json: boolean,
+    insecure = false,
+  ): Promise<string | null> {
+    const res = await axios.post(
+      'https://api.mistral.ai/v1/chat/completions',
+      {
+        model: 'mistral-small-latest',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: json ? { type: 'json_object' } : { type: 'text' },
+        temperature: 0.7,
+        max_tokens: 1200,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        ...(insecure ? { httpsAgent: this.insecureAgent } : {}),
+      },
+    );
+    return res.data?.choices?.[0]?.message?.content ?? null;
   }
 
   /**
@@ -31,19 +90,24 @@ export class AiService {
     json = false,
   ): Promise<any | null> {
     try {
-      const res = await this.mistral.chat.complete({
-        model: 'mistral-small-latest',
-        messages: [{ role: 'user', content: prompt }],
-        responseFormat: json ? { type: 'json_object' } : { type: 'text' },
-        temperature: 0.7,
-        maxTokens: 1200,
-      });
-      const content = res.choices?.[0]?.message?.content ?? null;
+      let content: string | null;
+      if (this.tlsInsecure) {
+        content = await this.requestMistralHttp(prompt, json, true);
+      } else {
+        const res = await this.mistral.chat.complete({
+          model: 'mistral-small-latest',
+          messages: [{ role: 'user', content: prompt }],
+          responseFormat: json ? { type: 'json_object' } : { type: 'text' },
+          temperature: 0.7,
+          maxTokens: 1200,
+        });
+        content = (res.choices?.[0]?.message?.content as string) ?? null;
+      }
       if (!content) return null;
       if (json) {
         try {
           return JSON.parse(
-            (content as string).replace(/```json|```/g, '').trim(),
+            content.replace(/```json|```/g, '').trim(),
           );
         } catch {
           this.logger.warn('JSON parse failed, returning null');
@@ -52,8 +116,54 @@ export class AiService {
       }
       return content;
     } catch (e: any) {
-      this.logger.error('Mistral API error: ' + (e?.message ?? e));
+      const errText = this.formatMistralError(e);
+      const isCertError =
+        errText.includes('CERT_NOT_YET_VALID') ||
+        errText.includes('certificate is not yet valid');
+
+      if (isCertError && !this.tlsInsecure) {
+        this.logger.warn(
+          'Certificat SSL Mistral rejeté — nouvel essai avec MISTRAL_TLS_INSECURE (ajoutez MISTRAL_TLS_INSECURE=1 dans backend/.env)',
+        );
+        try {
+          const content = await this.requestMistralHttp(prompt, json, true);
+          if (!content) return null;
+          if (json) {
+            return JSON.parse(content.replace(/```json|```/g, '').trim());
+          }
+          return content;
+        } catch (retryErr: any) {
+          this.logMistralFailure(this.formatMistralError(retryErr));
+          return null;
+        }
+      }
+
+      this.logMistralFailure(errText);
       return null;
+    }
+  }
+
+  private logMistralFailure(errText: string): void {
+    if (
+      errText.includes('CERT_NOT_YET_VALID') ||
+      errText.includes('certificate is not yet valid')
+    ) {
+      this.logger.error(
+        'Mistral API error: certificat SSL pas encore actif côté Mistral — ajoutez MISTRAL_TLS_INSECURE=1 dans backend/.env (dev local)',
+      );
+    } else if (errText.includes('CERT_HAS_EXPIRED')) {
+      this.logger.error(
+        'Mistral API error: certificat SSL expiré — synchronisez la date/heure Windows',
+      );
+    } else if (
+      errText.includes('401') ||
+      errText.toLowerCase().includes('unauthorized')
+    ) {
+      this.logger.error(
+        'Mistral API error: clé API invalide — vérifiez MISTRAL_API_KEY dans backend/.env',
+      );
+    } else {
+      this.logger.error('Mistral API error: ' + errText);
     }
   }
 

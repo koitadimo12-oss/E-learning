@@ -1,14 +1,4 @@
-/**
- * Module racine — assemble tous les sous-modules de l'application.
- *
- * Chaque import = un domaine métier :
- *   AuthModule     → connexion / inscription (JWT)
- *   CoursesModule  → CRUD cours
- *   BooksModule    → CRUD livres
- *   ProgressModule → progression étudiant
- *   AiModule       → chat Mistral (API externe)
- *   SeedModule     → données initiales (admin + cours)
- */
+
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
