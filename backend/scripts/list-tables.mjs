@@ -25,7 +25,7 @@ const conn = await mysql.createConnection({
 });
 
 const [tables] = await conn.query('SHOW TABLES');
-console.log('\n📋 Tables dans la base "' + env.DB_DATABASE + '" (port ' + env.DB_PORT + ') :\n');
+console.log('\n Tables dans la base "' + env.DB_DATABASE + '" (port ' + env.DB_PORT + ') :\n');
 for (const row of tables) {
   console.log('  -', Object.values(row)[0]);
 }
@@ -38,7 +38,7 @@ try {
   if (users.length === 0) console.log('  (aucun)');
   else users.forEach((u) => console.log(`  - ${u.nom} <${u.email}> [${u.role}]`));
 } catch (e) {
-  console.log('\n⚠️  Table utilisateurs introuvable — démarrez le backend une fois pour créer les tables.');
+  console.log('\n  Table utilisateurs introuvable — démarrez le backend une fois pour créer les tables.');
 }
 
 await conn.end();
