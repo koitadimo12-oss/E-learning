@@ -1,12 +1,13 @@
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common'; // Ajout de Logger
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap'); // Initialisation du logger
 
-  // Autorise le frontend Vercel et le localhost pour le développement
+  // Autorise le frontend Vercel et le localhost
   app.enableCors({
     origin: [
       'http://localhost:5173',
@@ -33,7 +34,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT ?? 3001;
+  // Correction : Utilisez 3000 comme défaut pour le local
+  const port = process.env.PORT || 3000;
+  
   await app.listen(port, '0.0.0.0');
+  logger.log(`Application is running on: ${await app.getUrl()}`);
 }
-bootstrap();
+
+// Ajout d'un catch pour voir les erreurs de démarrage dans les logs de Render
+bootstrap().catch((err) => {
+  console.error('Erreur fatale au démarrage :', err);
+  process.exit(1);
+});
