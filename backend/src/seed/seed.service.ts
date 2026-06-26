@@ -22,7 +22,7 @@ export class SeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // Le try/catch est crucial ici pour empêcher le crash au premier déploiement
+    // Le try/catch est crucial pour empêcher l'arrêt du serveur si la BDD n'est pas prête
     try {
       this.logger.log('Démarrage du processus de Seed...');
       await this.seedAdmin();
@@ -35,7 +35,7 @@ export class SeedService implements OnModuleInit {
   }
 
   private async seedAdmin() {
-    // Utilisation de config.get pour éviter le crash si les variables manquent
+    // Utilisation de config.get pour éviter le plantage si les variables sont absentes
     const email = this.config.get<string>('ADMIN_SEED_EMAIL')?.trim().toLowerCase();
     const motDePasse = this.config.get<string>('ADMIN_SEED_PASSWORD');
 
@@ -66,33 +66,14 @@ export class SeedService implements OnModuleInit {
     const count = await this.coursesRepository.count();
     if (count >= CIBLE) return;
 
-    const titresExistants = new Set(
-      (await this.coursesRepository.find({ select: { titre: true } })).map((c) => c.titre),
-    );
-
-    let ajoutes = 0;
+    // Logique d'ajout des cours
     for (const cours of listeCours) {
-      if (count + ajoutes >= CIBLE) break;
-      if (titresExistants.has(cours.titre)) continue;
-
-      const newCourse = this.coursesRepository.create({
-        titre: cours.titre,
-        description: cours.description,
-        image: cours.image,
-        instructeur: cours.instructeur,
-        categorie: cours.categorie,
-        niveau: cours.niveau,
-        duree: cours.duree,
-        badge: cours.badge,
-        nouveau: cours.nouveau,
-        chapitres: cours.chapitres,
-        quiz: cours.quiz,
-      });
-      await this.coursesRepository.save(newCourse);
-      titresExistants.add(cours.titre);
-      ajoutes++;
+      const existing = await this.coursesRepository.findOne({ where: { titre: cours.titre } });
+      if (!existing) {
+        await this.coursesRepository.save(this.coursesRepository.create(cours));
+      }
     }
-    this.logger.log(`Courses: +${ajoutes} ajoutés.`);
+    this.logger.log(`Courses initialisés.`);
   }
 
   private async seedBooks() {
@@ -100,20 +81,13 @@ export class SeedService implements OnModuleInit {
     const count = await this.booksRepository.count();
     if (count >= CIBLE) return;
 
-    const titresExistants = new Set(
-      (await this.booksRepository.find({ select: { title: true } })).map((b) => b.title),
-    );
-
-    let ajoutes = 0;
+    // Logique d'ajout des livres
     for (const livre of getLivresPourSeed(CIBLE)) {
-      if (count + ajoutes >= CIBLE) break;
-      if (titresExistants.has(livre.title)) continue;
-
-      const row = this.booksRepository.create(livre);
-      await this.booksRepository.save(row);
-      titresExistants.add(livre.title);
-      ajoutes++;
+      const existing = await this.booksRepository.findOne({ where: { title: livre.title } });
+      if (!existing) {
+        await this.booksRepository.save(this.booksRepository.create(livre));
+      }
     }
-    this.logger.log(`Books: +${ajoutes} ajoutés.`);
+    this.logger.log(`Books initialisés.`);
   }
 }
