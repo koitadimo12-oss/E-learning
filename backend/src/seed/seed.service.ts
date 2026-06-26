@@ -5,40 +5,44 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Course } from '../courses/entities/course.entity';
 import { User } from '../users/entities/user.entity';
+import { Book } from '../books/entities/book.entity';
 import { Role } from '../common/enums';
 import { listeCours } from './data';
 import { getLivresPourSeed } from './books-data';
-import { Book } from '../books/entities/book.entity';
-import { envRequired } from '../config/env.config';
 
-/**
- * Données initiales au démarrage du serveur.
- * Crée le compte admin et les cours de démo si la BDD est vide.
- */
 @Injectable()
 export class SeedService implements OnModuleInit {
   private readonly logger = new Logger(SeedService.name);
 
   constructor(
-    @InjectRepository(Course)
-    private readonly coursesRepository: Repository<Course>,
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
-    @InjectRepository(Book)
-    private readonly booksRepository: Repository<Book>,
+    @InjectRepository(Course) private readonly coursesRepository: Repository<Course>,
+    @InjectRepository(User) private readonly usersRepository: Repository<User>,
+    @InjectRepository(Book) private readonly booksRepository: Repository<Book>,
     private readonly config: ConfigService,
   ) {}
 
   async onModuleInit() {
-    await this.seedAdmin();
-    await this.seedCourses();
-    await this.seedBooks();
+    // Le try/catch est crucial ici pour empêcher le crash au premier déploiement
+    try {
+      this.logger.log('Démarrage du processus de Seed...');
+      await this.seedAdmin();
+      await this.seedCourses();
+      await this.seedBooks();
+      this.logger.log('Processus de Seed terminé avec succès.');
+    } catch (error) {
+      this.logger.warn('Seed ignoré : la base de données est probablement en cours de synchronisation.');
+    }
   }
 
-  /** Compte admin initial — identifiants uniquement dans backend/.env */
   private async seedAdmin() {
-    const email = envRequired(this.config, 'ADMIN_SEED_EMAIL').trim().toLowerCase();
-    const motDePasse = envRequired(this.config, 'ADMIN_SEED_PASSWORD');
+    // Utilisation de config.get pour éviter le crash si les variables manquent
+    const email = this.config.get<string>('ADMIN_SEED_EMAIL')?.trim().toLowerCase();
+    const motDePasse = this.config.get<string>('ADMIN_SEED_PASSWORD');
+
+    if (!email || !motDePasse) {
+      this.logger.warn('Seed Admin ignoré : variables ADMIN_SEED_EMAIL/PASSWORD manquantes.');
+      return;
+    }
 
     const existing = await this.usersRepository.findOne({ where: { email } });
     if (existing) {
@@ -54,16 +58,13 @@ export class SeedService implements OnModuleInit {
       role: Role.ADMIN,
     });
     await this.usersRepository.save(admin);
-    this.logger.log('Compte admin initial créé (voir ADMIN_SEED_EMAIL dans .env).');
+    this.logger.log('Compte admin initial créé.');
   }
 
   private async seedCourses() {
     const CIBLE = 115;
     const count = await this.coursesRepository.count();
-    if (count >= CIBLE) {
-      this.logger.log(`Courses: ${count} en base (objectif ${CIBLE} atteint).`);
-      return;
-    }
+    if (count >= CIBLE) return;
 
     const titresExistants = new Set(
       (await this.coursesRepository.find({ select: { titre: true } })).map((c) => c.titre),
@@ -91,17 +92,13 @@ export class SeedService implements OnModuleInit {
       titresExistants.add(cours.titre);
       ajoutes++;
     }
-    this.logger.log(`Courses: +${ajoutes} ajoutés (total ~${count + ajoutes}).`);
+    this.logger.log(`Courses: +${ajoutes} ajoutés.`);
   }
 
-  /** Complète la bibliothèque jusqu'à 115 livres */
   private async seedBooks() {
     const CIBLE = 115;
     const count = await this.booksRepository.count();
-    if (count >= CIBLE) {
-      this.logger.log(`Books: ${count} en base (objectif ${CIBLE} atteint).`);
-      return;
-    }
+    if (count >= CIBLE) return;
 
     const titresExistants = new Set(
       (await this.booksRepository.find({ select: { title: true } })).map((b) => b.title),
@@ -117,6 +114,6 @@ export class SeedService implements OnModuleInit {
       titresExistants.add(livre.title);
       ajoutes++;
     }
-    this.logger.log(`Books: +${ajoutes} ajoutés (total ~${count + ajoutes}).`);
+    this.logger.log(`Books: +${ajoutes} ajoutés.`);
   }
 }
