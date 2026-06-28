@@ -1,16 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- *  AUTHENTIFICATION — appels vers backend/src/auth/
- * ═══════════════════════════════════════════════════════════════
- *
- *  Frontend (page)          →  authApi           →  Backend
- *  Inscription.tsx          →  register()        →  POST /auth/register
- *  Connexion.tsx            →  login()           →  POST /auth/login
- *  App.tsx (au chargement)  →  me()              →  GET  /auth/me
- *  Profil / TableauBord     →  updateProfile()   →  PATCH /users/me
- *  DashboardAdmin           →  listUsers()       →  GET  /users
- */
-
 import { apiGet, apiPatch, apiPost, setAuthToken } from "./apiClient";
 
 export type ApiUser = {

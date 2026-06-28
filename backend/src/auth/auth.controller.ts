@@ -8,7 +8,6 @@ import { CurrentUser } from '../common/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
-// Ce contrôleur gère toutes les routes commençant par /auth
 @ApiTags('Authentification')
 @Controller('auth')
 export class AuthController {

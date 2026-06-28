@@ -19,10 +19,6 @@ import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Course } from './entities/course.entity';
 
-/**
- * API REST des cours.
- * Lecture publique, écriture réservée à l'admin (RBAC).
- */
 @ApiTags('Cours')
 @Controller('courses')
 export class CoursesController {

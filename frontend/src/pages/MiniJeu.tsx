@@ -1,15 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import EnteteRetour from "../composants/EnteteRetour";
+import { getSessionEtudiant } from "../services/etudiantService";
 import PiedPage from "../composants/PiedPage";
 import { useLanguage } from "../elearn/i18n/LanguageContext";
 import { getAiMiniGame, type AiGameResponse } from "../services/aiMiniGameApi";
 import { getAiAdvice, type AiAdviceResponse } from "../services/aiServiceApi";
 import { useLocation } from "react-router-dom";
 import { ajouterXpMiniJeu } from "../services/etudiantService";
+import { 
+  Gamepad2, Loader2, Dices, Timer, Star, Lightbulb, CheckCircle2, 
+  Trophy, Frown, Bot, Target, RotateCcw, BookOpen, Hourglass, Check
+} from "lucide-react";
 
 export default function MiniJeu(props: any) {
-  const { etudiant } = props;
+  const { etudiant, setEtudiant } = props;
   const navigate = useNavigate();
   const { lang } = useLanguage();
   const location = useLocation();
@@ -17,12 +22,20 @@ export default function MiniJeu(props: any) {
 
   const [topic, setTopic] = useState(initialTopic);
   const [loading, setLoading] = useState(false);
+
+  // ── game : la réponse du backend (POST /ai/game) stockée après l'appel API ──
   const [game, setGame] = useState<AiGameResponse | null>(null);
+
+  // ── result : calculé côté frontend après soumission, puis envoyé au backend pour l'XP ──
   const [result, setResult] = useState<{ ok: boolean; score: number; total: number; xp: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // ── aiAdvice : feedback IA reçu du backend (POST /ai/advice) après soumission ──
   const [aiAdvice, setAiAdvice] = useState<AiAdviceResponse | null>(null);
   const [aiAdviceLoading, setAiAdviceLoading] = useState(false);
-  const [_gamesPlayed, setGamesPlayed] = useState(0); // games completed in this session
+  const [_gamesPlayed, setGamesPlayed] = useState(0);
+
+  // ── Cooldown : géré en localStorage (pas de requête backend) ──
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(() => {
     const saved = localStorage.getItem('minijeu_cooldown');
     if (saved) {
@@ -33,14 +46,15 @@ export default function MiniJeu(props: any) {
   });
   const [cooldownLeft, setCooldownLeft] = useState(0);
 
-  // Countdown state
+  // ── Countdown : compte à rebours 3-2-1-GO avant le lancement du jeu ──
   const [countdown, setCountdown] = useState<number | null>(null);
 
-  // Timed quiz state
+  // ── État du chronomètre du quiz (frontend uniquement, pas d'appel backend) ──
   const [timerLeft, setTimerLeft] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const gameAreaRef = useRef<HTMLDivElement>(null);
 
   const lastScore = useMemo(() => {
     const pts = Number(etudiant?.points ?? 0);
@@ -54,7 +68,7 @@ export default function MiniJeu(props: any) {
     return Math.max(1, Math.min(3, Math.floor(pts / 120) + 1));
   }, [etudiant?.points]);
 
-  // Timer effect
+  // ── Chronomètre du quiz : décompte chaque seconde (logique purement frontend) ──
   useEffect(() => {
     if (!timerRunning || timerLeft <= 0) return;
     const id = setInterval(() => {
@@ -69,12 +83,12 @@ export default function MiniJeu(props: any) {
     return () => clearInterval(id);
   }, [timerRunning, timerLeft]);
 
-  // Auto-submit quiz when timer expires → set cooldown
+  // ── Soumission auto quand le chrono expire → déclenche submitQuiz() qui appelle le backend ──
   useEffect(() => {
     if (timerLeft === 0 && timerRunning === false && game?.type === "timed-quiz" && !quizSubmitted && Object.keys(quizAnswers).length > 0) {
-      submitQuiz();
+      submitQuiz(); // → appel backend pour XP + feedback IA
     }
-    // Cooldown when time runs out with no answers
+    // Cooldown si aucune réponse donnée (stocké en localStorage, pas de backend)
     if (timerLeft === 0 && timerRunning === false && game?.type === "timed-quiz" && !quizSubmitted && Object.keys(quizAnswers).length === 0) {
       const until = Date.now() + 30 * 60 * 1000; // 30 min cooldown
       setCooldownUntil(until);
@@ -98,6 +112,7 @@ export default function MiniJeu(props: any) {
     return () => clearInterval(id);
   }, [cooldownUntil]);
 
+  /** Génère un défi via POST /ai/game */
   const generateGame = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -107,10 +122,11 @@ export default function MiniJeu(props: any) {
     setQuizSubmitted(false);
     setTimerRunning(false);
     try {
+      // ── Requête vers le backend : POST /ai/game ──
       const g = await getAiMiniGame({ lang, topic: topic.trim() || "apprentissage", lastScore, level });
       setGame(g);
       
-      // Start countdown before game
+      // Lance le compte à rebours 3-2-1-GO (overlay plein écran)
       setCountdown(3);
     } catch (e: any) {
       setError(e?.message ?? "Erreur mini-jeu");
@@ -118,30 +134,40 @@ export default function MiniJeu(props: any) {
     }
   }, [lang, topic, lastScore, level]);
 
-  // Countdown effect
+  // ── Effet countdown : 3→2→1→GO puis démarre le chronomètre du quiz ──
   useEffect(() => {
     if (countdown === null) return;
     if (countdown > 0) {
       const id = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(id);
     } else {
+      // Après "GO !" (countdown === 0), on attend 800ms puis on lance le jeu
       const id = setTimeout(() => {
         setCountdown(null);
         setLoading(false);
-        // Start timer for timed-quiz after countdown
+        // Démarre le chronomètre pour les quiz chronométrés (secondes définies par le backend)
         if (game?.type === "timed-quiz" && game.payload?.seconds) {
           setTimerLeft(game.payload.seconds);
           setTimerRunning(true);
         }
+        // Scroll immédiat vers le haut de la zone de jeu pour tout voir sans scroller
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          setTimeout(() => {
+            gameAreaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        });
       }, 800);
       return () => clearTimeout(id);
     }
   }, [countdown, game]);
 
+  /** Feedback IA personnalisé via POST /ai/advice */
   const fetchAiAdvice = async (score: number, total: number) => {
     setAiAdviceLoading(true);
     try {
       const pct = Math.round((score / total) * 100);
+      // ── Requête vers le backend : POST /ai/advice ──
       const res = await getAiAdvice({
         lastScore: pct,
         topic: game?.title || topic,
@@ -155,6 +181,7 @@ export default function MiniJeu(props: any) {
     }
   };
 
+  /** Calcule le score et ajoute l'XP (PATCH /users/me) */
   const submitQuiz = useCallback(() => {
     if (!game?.payload?.questions) return;
     setQuizSubmitted(true);
@@ -167,8 +194,16 @@ export default function MiniJeu(props: any) {
     const pct = Math.round((correct / questions.length) * 100);
     const xpGagne = pct >= 60 ? game.reward.xp : 0;
     
+    // ── APPEL BACKEND : ajout d'XP (si score suffisant) ──
     if (xpGagne > 0 && etudiant) {
-      void ajouterXpMiniJeu(etudiant.id, xpGagne);
+      void ajouterXpMiniJeu(etudiant.id, xpGagne).then(() => {
+        // Met à jour l'état global immédiatement pour que le Dashboard affiche les XP
+        if (setEtudiant) {
+          getSessionEtudiant().then((updated) => {
+            if (updated) setEtudiant(updated);
+          });
+        }
+      });
     }
 
     setResult({
@@ -178,6 +213,7 @@ export default function MiniJeu(props: any) {
       xp: xpGagne
     });
 
+    // ── APPEL BACKEND : feedback IA personnalisé ──
     fetchAiAdvice(correct, questions.length);
     setGamesPlayed(g => g + 1);
   }, [game, quizAnswers, etudiant, lang]);
@@ -196,7 +232,7 @@ export default function MiniJeu(props: any) {
         <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-black">🎮 Mini-jeu du jour</h1>
+              <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2"><Gamepad2 className="w-8 h-8" /> Mini-jeu du jour</h1>
               <p className="mt-2 text-slate-600 dark:text-slate-300">
                 Défis personnalisés par l'IA selon votre niveau. Langue : <strong>{lang}</strong>
               </p>
@@ -218,16 +254,17 @@ export default function MiniJeu(props: any) {
               type="button"
               disabled={loading}
               onClick={generateGame}
-              className="px-6 py-3 rounded-2xl bg-orange-500 hover:bg-orange-400 text-white font-bold disabled:opacity-60 transition"
+              className="px-6 py-3 rounded-2xl bg-orange-500 hover:bg-orange-400 text-white font-bold disabled:opacity-60 transition flex items-center justify-center gap-2"
             >
-              {loading ? "⏳ Génération..." : "🎲 Générer un défi"}
+              {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Génération...</> : <><Dices className="w-5 h-5" /> Générer un défi</>}
             </button>
           </div>
 
           {error && <p className="mt-4 text-sm text-red-600 dark:text-red-300">{error}</p>}
 
           {game && (
-            <div className="mt-8">
+            <div ref={gameAreaRef} className="mt-8 scroll-mt-4">
+              {/* ── Zone de jeu : ref pour auto-scroll après le countdown ── */}
               {/* Game info header */}
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 p-5">
                 <div className="flex items-center justify-between">
@@ -237,7 +274,7 @@ export default function MiniJeu(props: any) {
                   </div>
                   {game.type === "timed-quiz" && timerRunning && (
                     <div
-                      className={`text-2xl font-black tabular-nums transition-colors ${
+                      className={`text-2xl font-black tabular-nums transition-colors flex items-center gap-1 ${
                         timerLeft <= 5
                           ? "text-red-500 animate-pulse"
                           : timerLeft <= 10
@@ -245,19 +282,19 @@ export default function MiniJeu(props: any) {
                           : "text-blue-600 dark:text-blue-400"
                       }`}
                     >
-                      ⏱ {formatTime(timerLeft)}
+                      <Timer className="w-6 h-6" /> {formatTime(timerLeft)}
                     </div>
                   )}
                 </div>
                 <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{game.rules}</p>
                 <div className="mt-3 flex items-center gap-4 text-sm">
-                  <span>Difficulté: <strong>{"⭐".repeat(game.difficulty)}</strong></span>
+                  <span className="flex items-center">Difficulté: <span className="flex ml-1 text-yellow-500">{Array(game.difficulty).fill(0).map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}</span></span>
                   <span>Gain: <strong className="text-emerald-600">+{game.reward.xp} XP</strong></span>
                   {game.reward.badge && <span>Badge: <strong className="text-orange-500">{game.reward.badge}</strong></span>}
                 </div>
               </div>
 
-              {/* TIMED QUIZ — real interactive */}
+              {/* ── QUIZ CHRONOMÉTRÉ : les questions viennent du backend (game.payload.questions) ── */}
               {game.type === "timed-quiz" && game.payload?.questions && (
                 <div className="mt-5 space-y-4">
                   {(game.payload.questions as { prompt: string; options: string[]; correctIndex: number; explanation?: string }[]).map((q, qi) => (
@@ -290,8 +327,8 @@ export default function MiniJeu(props: any) {
                         })}
                       </div>
                       {quizSubmitted && q.explanation && (
-                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 rounded-lg p-2">
-                          💡 {q.explanation}
+                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 rounded-lg p-2 flex items-start gap-1.5">
+                          <Lightbulb className="w-4 h-4 shrink-0 text-amber-500" /> <span>{q.explanation}</span>
                         </p>
                       )}
                     </div>
@@ -302,15 +339,15 @@ export default function MiniJeu(props: any) {
                       type="button"
                       onClick={submitQuiz}
                       disabled={Object.keys(quizAnswers).length === 0}
-                      className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg transition disabled:opacity-50"
+                      className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      ✅ Valider mes réponses
+                      <CheckCircle2 className="w-6 h-6" /> Valider mes réponses
                     </button>
                   )}
                 </div>
               )}
 
-              {/* FILL CODE — real interactive */}
+              {/* ── CHALLENGE CODE : snippet et choix viennent du backend (game.payload) ── */}
               {game.type === "fill-code" && (
                 <div className="mt-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
                   <p className="font-bold text-lg">{game.payload?.prompt ?? "Compléter le code"}</p>
@@ -327,8 +364,10 @@ export default function MiniJeu(props: any) {
                         onClick={() => {
                           const isOk = c === game.payload?.correct;
                           const xp = isOk ? game.reward.xp : 0;
+                          // ── APPEL BACKEND si bonne réponse : ajout XP ──
                           if (xp > 0 && etudiant) void ajouterXpMiniJeu(etudiant.id, xp);
                           setResult({ ok: isOk, score: isOk ? 1 : 0, total: 1, xp });
+                          // ── APPEL BACKEND : feedback IA ──
                           fetchAiAdvice(isOk ? 1 : 0, 1);
                         }}
                         className={`px-4 py-3 rounded-xl border text-sm font-bold transition ${
@@ -346,7 +385,7 @@ export default function MiniJeu(props: any) {
                 </div>
               )}
 
-              {/* LOGIC PUZZLE — real interactive */}
+              {/* ── PUZZLE LOGIQUE : énoncé et options viennent du backend (game.payload) ── */}
               {game.type === "logic-puzzle" && (
                 <div className="mt-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
                   <p className="font-bold text-lg">{game.payload?.prompt ?? "Puzzle logique"}</p>
@@ -360,8 +399,18 @@ export default function MiniJeu(props: any) {
                         onClick={() => {
                           const isOk = idx === game.payload?.correctIndex;
                           const xp = isOk ? game.reward.xp : 0;
-                          if (xp > 0 && etudiant) void ajouterXpMiniJeu(etudiant.id, xp);
+                          // ── APPEL BACKEND si bonne réponse : ajout XP ──
+                          if (xp > 0 && etudiant) {
+                            void ajouterXpMiniJeu(etudiant.id, xp).then(() => {
+                              if (setEtudiant) {
+                                getSessionEtudiant().then((updated) => {
+                                  if (updated) setEtudiant(updated);
+                                });
+                              }
+                            });
+                          }
                           setResult({ ok: isOk, score: isOk ? 1 : 0, total: 1, xp });
+                          // ── APPEL BACKEND : feedback IA ──
                           fetchAiAdvice(isOk ? 1 : 0, 1);
                         }}
                         className={`px-4 py-3 rounded-xl border text-sm font-bold transition ${
@@ -379,7 +428,7 @@ export default function MiniJeu(props: any) {
                 </div>
               )}
 
-              {/* Result */}
+              {/* ── Résultat final — les données AI advice viennent du backend ── */}
               {result && (
                 <div
                   className={`mt-8 rounded-3xl border-2 p-8 shadow-2xl transition-all animate-in zoom-in-95 duration-500 ${
@@ -389,7 +438,7 @@ export default function MiniJeu(props: any) {
                   }`}
                 >
                   <div className="text-center">
-                    <p className="text-6xl mb-4">{result.ok ? "🎉" : "💪"}</p>
+                    <div className="flex justify-center">{result.ok ? <Trophy className="w-16 h-16 text-emerald-500 mb-4" /> : <Frown className="w-16 h-16 text-amber-500 mb-4" />}</div>
                     <h3 className="text-3xl font-black text-slate-900 dark:text-white">
                       {result.ok ? "Magnifique !" : "Pas mal !"}
                     </h3>
@@ -403,10 +452,10 @@ export default function MiniJeu(props: any) {
                     )}
                   </div>
 
-                  {/* AI Feedback */}
+                  {/* ── Feedback IA — reçu du backend POST /ai/advice via Mistral ── */}
                   <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-800">
                      <div className="flex items-center gap-3 mb-4">
-                        <span className="text-2xl">🤖</span>
+                        <Bot className="w-6 h-6 text-slate-500" />
                         <h4 className="font-black text-lg uppercase tracking-wider text-slate-500">Analyse de Mistral AI</h4>
                      </div>
                      
@@ -426,7 +475,7 @@ export default function MiniJeu(props: any) {
                                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
                                   <p className="text-xs font-black text-emerald-600 uppercase mb-2">Points forts</p>
                                   <ul className="text-sm space-y-1">
-                                    {aiAdvice.strengths.map((s, i) => <li key={i}>✅ {s}</li>)}
+                                    {aiAdvice.strengths.map((s, i) => <li key={i} className="flex gap-1.5 items-start"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> {s}</li>)}
                                   </ul>
                                 </div>
                              )}
@@ -434,7 +483,7 @@ export default function MiniJeu(props: any) {
                                <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30">
                                   <p className="text-xs font-black text-blue-600 uppercase mb-2">Conseils</p>
                                   <ul className="text-sm space-y-1">
-                                    {aiAdvice.actions.map((a, i) => <li key={i}>🎯 {a}</li>)}
+                                    {aiAdvice.actions.map((a, i) => <li key={i} className="flex gap-1.5 items-start"><Target className="w-4 h-4 text-blue-500 shrink-0" /> {a}</li>)}
                                   </ul>
                                 </div>
                              )}
@@ -463,17 +512,17 @@ export default function MiniJeu(props: any) {
                     <button
                       type="button"
                       onClick={generateGame}
-                      className="px-8 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30 transition-all active:scale-95"
+                      className="px-8 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center gap-2"
                     >
-                      🔄 Rejouer
+                      <RotateCcw className="w-5 h-5" /> Rejouer
                     </button>
                     {game.type === "timed-quiz" && (
                       <button
                         type="button"
                         onClick={() => setQuizSubmitted(true)}
-                        className="px-8 py-3 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 font-bold transition-all"
+                        className="px-8 py-3 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 font-bold transition-all flex items-center gap-2"
                       >
-                        📖 Voir la correction
+                        <BookOpen className="w-5 h-5" /> Voir la correction
                       </button>
                     )}
                     <button
@@ -491,22 +540,28 @@ export default function MiniJeu(props: any) {
         </div>
       </section>
 
-      {/* Countdown Overlay */}
+      {/* ── Overlay compte à rebours plein écran (3-2-1-GO) ──
+           S'affiche en position fixed pour couvrir tout l'écran sans scroll ── */}
       {countdown !== null && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-xl">
-           <div className="text-center animate-in zoom-in-50 duration-300">
-              <p className="text-9xl font-black text-white drop-shadow-2xl">
-                {countdown === 0 ? "GO !" : countdown}
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-start pt-[15vh] md:pt-[20vh] bg-slate-900/90 backdrop-blur-2xl">
+           <div className="text-center animate-in zoom-in-50 duration-300 flex flex-col items-center gap-6">
+              <div className="w-40 h-40 rounded-full border-4 border-white/20 flex items-center justify-center bg-white/5 shadow-2xl shadow-orange-500/20">
+                <p className="text-8xl font-black text-white drop-shadow-2xl" style={{ lineHeight: 1 }}>
+                  {countdown === 0 ? "GO" : countdown}
+                </p>
+              </div>
+              <p className="text-lg font-bold text-white/60 tracking-widest uppercase">
+                {countdown === 0 ? "C'est parti !" : "Préparez-vous..."}
               </p>
            </div>
         </div>
       )}
 
-      {/* Cooldown Overlay */}
+      {/* ── Overlay cooldown (30 min d'attente — pas d'appel backend, juste localStorage) ── */}
       {cooldownUntil && cooldownLeft > 0 && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl">
-          <div className="text-center max-w-sm px-8 py-12 rounded-3xl bg-slate-900 border border-white/10 shadow-2xl">
-            <p className="text-6xl mb-4">⏳</p>
+          <div className="text-center max-w-sm px-8 py-12 rounded-3xl bg-slate-900 border border-white/10 shadow-2xl flex flex-col items-center">
+            <Hourglass className="w-16 h-16 text-orange-400 mb-4 animate-pulse" />
             <h2 className="text-2xl font-black text-white mb-2">Temps écoulé !</h2>
             <p className="text-slate-400 mb-6">Vous n'avez pas répondu. Revenez dans :</p>
             <p className="text-5xl font-black text-orange-400 font-mono">

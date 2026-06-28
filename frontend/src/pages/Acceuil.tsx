@@ -5,6 +5,10 @@ import PiedPage from "../composants/PiedPage";
 import CarteCours from "../composants/CarteCours";
 import CarteTemoignage from "../composants/CarteTemoignages";
 import SectionReveal from "../composants/SectionReveal";
+import { 
+  Flame, Heart, User, Sparkles, GraduationCap, Trophy, Star, 
+  Library, Unlock, Bot, Rocket, Brain, LineChart, Globe, BadgeCheck
+} from "lucide-react";
 import { listeCours } from "../services/coursService";
 import type { Cours } from "../services/coursService";
 import { chargerCours, getCoursCache } from "../services/coursApi";
@@ -12,7 +16,7 @@ import { getStatsPlateforme, type StatsPlateforme } from "../services/statsApi";
 import { useCountUp } from "../hooks/useCountUp";
 import { useInViewOnce } from "../hooks/useInViewOnce";
 import { getDernierCoursId, getObjectifDuJour } from "../services/stockageLocal";
-import { toucherStreak } from "../services/etudiantService";
+import { validerProjetFinal } from "../services/etudiantService";
 import type { Etudiant } from "../services/etudiantService";
 
 type Props = { etudiant: Etudiant | null; onDeconnexion: () => void };
@@ -26,12 +30,25 @@ const HERO_IMAGES = [
 const CYCLING_WORDS = ["efficacement", "rapidement", "intelligemment", "durablement"];
 
 const TICKER_ITEMS = [
-  "📚 Bibliothèque numérique", "🎯 Quiz intelligents", "🏆 Certificats",
-  "🔥 Streaks quotidiens", "🎓 Universités prestigieuses", "💡 Micro-learning",
-  "📊 Suivi de progression", "🤖 Assistant IA", "🌍 Accessibilité globale",
-  "📚 Bibliothèque numérique", "🎯 Quiz intelligents", "🏆 Certificats",
-  "🔥 Streaks quotidiens", "🎓 Universités prestigieuses", "💡 Micro-learning",
-  "📊 Suivi de progression", "🤖 Assistant IA", "🌍 Accessibilité globale",
+  { text: "Bibliothèque numérique", icon: <Library className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Quiz intelligents", icon: <Brain className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Certificats", icon: <Trophy className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Streaks quotidiens", icon: <Flame className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Universités prestigieuses", icon: <GraduationCap className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Micro-learning", icon: <Sparkles className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Suivi de progression", icon: <LineChart className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Assistant IA", icon: <Bot className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Accessibilité globale", icon: <Globe className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  // Repeated for marquee
+  { text: "Bibliothèque numérique", icon: <Library className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Quiz intelligents", icon: <Brain className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Certificats", icon: <Trophy className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Streaks quotidiens", icon: <Flame className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Universités prestigieuses", icon: <GraduationCap className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Micro-learning", icon: <Sparkles className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Suivi de progression", icon: <LineChart className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Assistant IA", icon: <Bot className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
+  { text: "Accessibilité globale", icon: <Globe className="inline w-4 h-4 mr-1.5 mb-0.5" /> },
 ];
 
 export default function Acceuil(props: Props) {
@@ -64,7 +81,7 @@ export default function Acceuil(props: Props) {
   const countEtudiants = useCountUp(stats.etudiantsActifs, 1600, heroStatsVisible);
   const countLivres = useCountUp(stats.livresDisponibles, 1600, heroStatsVisible);
 
-  useEffect(() => { if (etudiant) void toucherStreak(etudiant.id); }, [etudiant?.id]);
+
 
   useEffect(() => {
     if (location.hash === "#a-propos") {
@@ -211,7 +228,7 @@ export default function Acceuil(props: Props) {
       <div className="bg-orange-500 py-3 overflow-hidden">
         <div className="knd-ticker inline-flex gap-10">
           {TICKER_ITEMS.map((item, i) => (
-            <span key={i} className="text-white font-bold text-sm shrink-0 mx-4">{item}</span>
+            <span key={i} className="text-white font-bold text-sm shrink-0 mx-4 flex items-center">{item.icon} {item.text}</span>
           ))}
         </div>
       </div>
@@ -225,7 +242,7 @@ export default function Acceuil(props: Props) {
             <div className="mt-8 grid md:grid-cols-3 gap-6">
               <div className="rounded-2xl bg-slate-800/80 border border-white/10 p-6">
                 <p className="text-xs font-bold uppercase tracking-widest text-orange-300">Streak</p>
-                <p className="text-4xl font-black mt-2">🔥 {etudiant.streak ?? 0} jours</p>
+                <p className="text-4xl font-black mt-2 flex items-center gap-2"><Flame className="w-8 h-8 text-orange-500" /> {etudiant.streak ?? 0} jours</p>
                 <p className="text-sm text-slate-400 mt-2">Revenez chaque jour pour maintenir votre série.</p>
               </div>
               <div className="rounded-2xl bg-slate-800/80 border border-white/10 p-6">
@@ -249,8 +266,8 @@ export default function Acceuil(props: Props) {
               </div>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button onClick={() => navigate("/favoris")} className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5 text-white">❤️ Mes favoris</button>
-              <button onClick={() => navigate("/profil")} className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5 text-white">👤 Mon profil</button>
+              <button onClick={() => navigate("/favoris")} className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5 text-white flex items-center gap-2"><Heart className="w-4 h-4" /> Mes favoris</button>
+              <button onClick={() => navigate("/profil")} className="px-5 py-2.5 rounded-xl border border-white/20 text-sm font-semibold hover:bg-white/5 text-white flex items-center gap-2"><User className="w-4 h-4" /> Mon profil</button>
             </div>
           </div>
         </section>
@@ -395,7 +412,7 @@ export default function Acceuil(props: Props) {
             <div className="max-w-6xl mx-auto px-6 md:px-10 relative z-10">
               <div className="text-center mb-16">
                 <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-300 text-xs font-black uppercase tracking-[0.2em] mb-4">
-                  ✨ Pourquoi nous choisir
+                  <Sparkles className="w-3.5 h-3.5" /> Pourquoi nous choisir
                 </span>
                 <h3 className="text-3xl md:text-5xl font-black text-white leading-tight">
                   Une expérience conçue pour<br />
@@ -419,7 +436,7 @@ export default function Acceuil(props: Props) {
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-6">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">🎓</span>
+                      <GraduationCap className="w-6 h-6 text-blue-300" />
                       <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[10px] font-black uppercase tracking-widest">Apprentissage</span>
                     </div>
                     <h4 className="font-black text-white text-xl">Cours interactifs</h4>
@@ -444,7 +461,7 @@ export default function Acceuil(props: Props) {
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-6">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">🏆</span>
+                      <BadgeCheck className="w-6 h-6 text-orange-300" />
                       <span className="px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-400/30 text-orange-300 text-[10px] font-black uppercase tracking-widest">Certificats</span>
                     </div>
                     <h4 className="font-black text-white text-xl">Validez vos compétences</h4>
@@ -469,7 +486,7 @@ export default function Acceuil(props: Props) {
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-6">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">⭐</span>
+                      <Star className="w-6 h-6 text-emerald-300" />
                       <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-widest">Qualité</span>
                     </div>
                     <h4 className="font-black text-white text-xl">Contenu premium</h4>
@@ -483,17 +500,17 @@ export default function Acceuil(props: Props) {
               {/* Animated stats row */}
               <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
-                  { val: "50+", label: "Livres numériques", icon: "📚" },
-                  { val: "100%", label: "Gratuit à l'inscription", icon: "🆓" },
-                  { val: "24/7", label: "IA disponible", icon: "🤖" },
-                  { val: "∞", label: "Progression illimitée", icon: "🚀" },
+                  { val: "50+", label: "Livres numériques", icon: <Library className="w-8 h-8 mx-auto text-blue-300" /> },
+                  { val: "100%", label: "Gratuit à l'inscription", icon: <Unlock className="w-8 h-8 mx-auto text-emerald-300" /> },
+                  { val: "24/7", label: "IA disponible", icon: <Bot className="w-8 h-8 mx-auto text-orange-300" /> },
+                  { val: "∞", label: "Progression illimitée", icon: <Rocket className="w-8 h-8 mx-auto text-purple-300" /> },
                 ].map((stat, i) => (
                   <div
                     key={stat.label}
                     className="text-center p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all hover:-translate-y-1"
                     style={{ animation: `fadeSlideUp 0.6s ease-out ${i * 0.15}s both` }}
                   >
-                    <span className="text-3xl">{stat.icon}</span>
+                    <div className="flex justify-center mb-2">{stat.icon}</div>
                     <p className="text-3xl font-black text-white mt-3">{stat.val}</p>
                     <p className="text-slate-400 text-xs mt-1 font-medium">{stat.label}</p>
                   </div>

@@ -1,15 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- *  COURS — appels vers backend/src/courses/courses.controller.ts
- * ═══════════════════════════════════════════════════════════════
- *
- *  Frontend              →  coursApi              →  Backend
- *  ListeCours.tsx        →  chargerCours()        →  GET  /courses
- *  DetailCours.tsx       →  getCoursParId()       →  GET  /courses/:id
- *  DashboardAdmin        →  creerCours()          →  POST /courses (admin)
- *  DashboardAdmin        →  supprimerCours()      →  DELETE /courses/:id (admin)
- */
-
 import { apiDelete, apiGet, apiPatch, apiPost } from "./apiClient";
 import type { Chapitre, Cours, Quiz } from "./coursService";
 

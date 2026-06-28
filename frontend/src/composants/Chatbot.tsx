@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { apiPost } from '../services/apiClient';
 import { IoSend, IoClose, IoPerson } from 'react-icons/io5';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2, Bot, FileText, Book, Lightbulb, Search, Key, UserPlus } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -25,6 +26,8 @@ interface ChatbotProps {
   };
   /** Affiche au-dessus des lecteurs plein écran (bibliothèque, PDF…) */
   portal?: boolean;
+  /** Si false, le chatbot demande à l'utilisateur de se connecter au lieu d'appeler l'IA */
+  isAuthenticated?: boolean;
 }
 
 function contextStorageKey(ctx?: ChatbotProps['contexte']) {
@@ -51,7 +54,8 @@ function buildWelcomeText(ctx?: ChatbotProps['contexte']) {
   return "Bonjour ! Je suis IA Kaay Niou Diang. Je peux vous expliquer des concepts, résumer vos cours ou vous donner des conseils d'apprentissage. Comment puis-je vous aider ?";
 }
 
-export default function Chatbot({ contexte, portal = false }: ChatbotProps) {
+export default function Chatbot({ contexte, portal = false, isAuthenticated = true }: ChatbotProps) {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -140,6 +144,18 @@ export default function Chatbot({ contexte, portal = false }: ChatbotProps) {
     };
     setMessages(prev => [...prev, userMsg]);
     setInputValue('');
+
+    // ── Visiteur non connecté → message de redirection ──
+    if (!isAuthenticated) {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: "Connectez-vous pour utiliser IA Kaay Niou Diang 🔐\n\nCréez un compte ou connectez-vous pour poser vos questions à l'IA et profiter de l'assistant intelligent.",
+        timestamp: new Date(),
+      }]);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -166,19 +182,19 @@ export default function Chatbot({ contexte, portal = false }: ChatbotProps) {
   const quickActions =
     contexte?.type === 'bibliotheque' && contexte.livre
       ? [
-          { label: '📝 Explique cette page', msg: 'Explique-moi ce que je suis en train de lire.' },
-          { label: '📚 Résume ce livre', msg: 'Résume-moi ce livre en 5 points clés.' },
-          { label: '💡 Concepts clés', msg: 'Quels sont les concepts les plus importants de ce livre ?' },
+          { label: <><FileText className="w-3.5 h-3.5 inline mr-1" /> Explique cette page</>, msg: 'Explique-moi ce que je suis en train de lire.' },
+          { label: <><Book className="w-3.5 h-3.5 inline mr-1" /> Résume ce livre</>, msg: 'Résume-moi ce livre en 5 points clés.' },
+          { label: <><Lightbulb className="w-3.5 h-3.5 inline mr-1" /> Concepts clés</>, msg: 'Quels sont les concepts les plus importants de ce livre ?' },
         ]
       : contexte?.type === 'bibliotheque'
         ? [
-            { label: '📖 Recommande un livre', msg: 'Quel livre me recommandes-tu pour débuter ?' },
-            { label: '🔍 Par catégorie', msg: 'Quels livres as-tu en cybersécurité ou en IA ?' },
-            { label: '💡 Conseil lecture', msg: 'Comment lire efficacement un livre technique ?' },
+            { label: <><Book className="w-3.5 h-3.5 inline mr-1" /> Recommande un livre</>, msg: 'Quel livre me recommandes-tu pour débuter ?' },
+            { label: <><Search className="w-3.5 h-3.5 inline mr-1" /> Par catégorie</>, msg: 'Quels livres as-tu en cybersécurité ou en IA ?' },
+            { label: <><Lightbulb className="w-3.5 h-3.5 inline mr-1" /> Conseil lecture</>, msg: 'Comment lire efficacement un livre technique ?' },
           ]
         : [
-            { label: '📚 Expliquer un cours', msg: "Peux-tu expliquer un concept que je n'ai pas compris ?" },
-            { label: '💡 Conseil d\'apprentissage', msg: 'Donne-moi des conseils pour apprendre plus efficacement.' },
+            { label: <><Book className="w-3.5 h-3.5 inline mr-1" /> Expliquer un cours</>, msg: "Peux-tu expliquer un concept que je n'ai pas compris ?" },
+            { label: <><Lightbulb className="w-3.5 h-3.5 inline mr-1" /> Conseil d'apprentissage</>, msg: 'Donne-moi des conseils pour apprendre plus efficacement.' },
           ];
 
   // Window dimensions for fullscreen
@@ -201,18 +217,20 @@ export default function Chatbot({ contexte, portal = false }: ChatbotProps) {
             <div className="absolute top-[-50%] left-[-20%] w-full h-[200%] bg-white rotate-12 blur-3xl" />
           </div>
           <div className="flex items-center gap-3 relative z-10">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 text-xl">🤖</div>
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 text-white">
+              <Bot className="w-6 h-6" />
+            </div>
             <div>
               <h3 className="font-bold text-base tracking-tight">IA Kaay Niou Diang</h3>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                 {contexte?.type === 'bibliotheque' && contexte.livre ? (
-                  <p className="text-[11px] text-blue-50 font-medium">
-                    📚 Bibliothèque — {contexte.livre.slice(0, 20)}{contexte.livre.length > 20 ? '…' : ''}
+                  <p className="text-[11px] text-blue-50 font-medium flex items-center gap-1">
+                    <Book className="w-3 h-3" /> Bibliothèque — {contexte.livre.slice(0, 20)}{contexte.livre.length > 20 ? '…' : ''}
                     {contexte.page ? ` (${contexte.page})` : ''}
                   </p>
                 ) : contexte?.type === 'bibliotheque' ? (
-                  <p className="text-[11px] text-blue-50 font-medium">📚 Bibliothèque — catalogue</p>
+                  <p className="text-[11px] text-blue-50 font-medium flex items-center gap-1"><Book className="w-3 h-3" /> Bibliothèque — catalogue</p>
                 ) : (
                   <p className="text-[11px] text-blue-50 font-medium">En ligne • IA Mistral</p>
                 )}
@@ -237,8 +255,8 @@ export default function Chatbot({ contexte, portal = false }: ChatbotProps) {
         {/* Quick actions */}
         {messages.length <= 1 && (
           <div className="px-4 pt-3 flex flex-wrap gap-2 shrink-0">
-            {quickActions.map(a => (
-              <button key={a.label} onClick={() => { setInputValue(a.msg); }}
+            {quickActions.map((a, i) => (
+              <button key={i} onClick={() => { setInputValue(a.msg); }}
                 className="px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 transition">
                 {a.label}
               </button>
@@ -254,7 +272,7 @@ export default function Chatbot({ contexte, portal = false }: ChatbotProps) {
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                   msg.sender === 'user' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
                 }`}>
-                  {msg.sender === 'user' ? <IoPerson size={14} /> : <span className="text-sm">🤖</span>}
+                  {msg.sender === 'user' ? <IoPerson size={14} /> : <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />}
                 </div>
                 <div className={`rounded-2xl px-4 py-3 shadow-sm text-[13.5px] leading-relaxed whitespace-pre-wrap font-medium ${
                   msg.sender === 'user'
@@ -282,6 +300,23 @@ export default function Chatbot({ contexte, portal = false }: ChatbotProps) {
             <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs text-center">
               {error}
               <button onClick={() => sendMessage()} className="ml-2 underline font-bold">Réessayer</button>
+            </div>
+          )}
+          {/* Boutons de connexion pour les visiteurs non connectés */}
+          {!isAuthenticated && messages.some(m => m.sender === 'user') && (
+            <div className="flex flex-col items-center gap-2 mt-2">
+              <button
+                onClick={() => navigate('/connexion')}
+                className="w-full max-w-[250px] py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold text-sm shadow-lg hover:from-indigo-500 hover:to-blue-500 transition-all flex items-center justify-center gap-2"
+              >
+                <Key className="w-4 h-4" /> Se connecter
+              </button>
+              <button
+                onClick={() => navigate('/inscription')}
+                className="w-full max-w-[250px] py-2.5 rounded-xl border border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-300 font-bold text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all flex items-center justify-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" /> Créer un compte
+              </button>
             </div>
           )}
         </div>
@@ -324,7 +359,7 @@ export default function Chatbot({ contexte, portal = false }: ChatbotProps) {
       >
         {isOpen ? <IoClose size={32} /> : (
           <>
-            <span className="text-2xl">🤖</span>
+            <Bot className="w-7 h-7" />
             <span className="text-xs font-black tracking-wide hidden sm:inline">IA</span>
           </>
         )}

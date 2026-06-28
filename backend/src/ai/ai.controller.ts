@@ -8,10 +8,6 @@ import { AiAdviceDto } from './dto/ai-advice.dto';
 import { AiGameDto } from './dto/ai-game.dto';
 import { AiQuizDto } from './dto/ai-quiz.dto';
 
-/**
- * API IA — consomme l'API externe Mistral (mistral-small-latest).
- * Utilisée par le chatbot, les leçons IA et les mini-jeux du frontend.
- */
 @ApiTags('Intelligence artificielle (Mistral)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -46,6 +42,12 @@ export class AiController {
     return this.ai.summary(body);
   }
 
+  /**
+   * POST /ai/advice
+   * Appelé par : frontend/services/aiServiceApi.ts → getAiAdvice()
+   * Utilisé dans : MiniJeu.tsx (après soumission du quiz)
+   * → Envoie le score à Mistral qui génère un feedback personnalisé
+   */
   @ApiOperation({ summary: 'Conseils après un quiz' })
   @Post('advice')
   advice(@Body() body: AiAdviceDto) {
@@ -63,6 +65,13 @@ export class AiController {
     return this.ai.quiz(body);
   }
 
+  /**
+   * POST /ai/game
+   * Appelé par : frontend/services/aiMiniGameApi.ts → getAiMiniGame()
+   * Utilisé dans : MiniJeu.tsx (bouton "Générer un défi")
+   * → Génère un jeu complet (timed-quiz, fill-code, ou logic-puzzle)
+   *   avec questions, réponses et récompenses XP via Mistral AI
+   */
   @ApiOperation({ summary: 'Mini-jeu pédagogique généré par IA' })
   @Post('game')
   game(@Body() body: AiGameDto) {

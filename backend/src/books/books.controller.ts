@@ -20,10 +20,6 @@ import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 
-/**
- * API REST des livres de la bibliothèque.
- * Lecture publique, écriture réservée à l'admin.
- */
 @ApiTags('Livres')
 @Controller('books')
 export class BooksController {

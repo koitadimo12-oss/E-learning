@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import BarreNavigation from "../composants/BarreNavigation";
 import PiedPage from "../composants/PiedPage";
+import { Target, Zap, Rocket } from "lucide-react";
 
 export default function APropos(props: any) {
   const { etudiant, onDeconnexion } = props;
@@ -27,7 +28,7 @@ export default function APropos(props: any) {
 
             <div className="mt-16 grid md:grid-cols-3 gap-8">
               <div className="group p-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-2xl mb-6">🎯</div>
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-2xl mb-6"><Target className="w-6 h-6 text-blue-500" /></div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Notre mission</h2>
                 <p className="mt-3 text-slate-600 dark:text-slate-400 leading-relaxed">
                   Démocratiser le savoir en proposant des parcours structurés et des contenus de haute qualité adaptés aux défis modernes.
@@ -35,7 +36,7 @@ export default function APropos(props: any) {
               </div>
 
               <div className="group p-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-2xl mb-6">⚡</div>
+                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-2xl mb-6"><Zap className="w-6 h-6 text-orange-500" /></div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Notre méthode</h2>
                 <p className="mt-3 text-slate-600 dark:text-slate-400 leading-relaxed">
                   L&apos;apprentissage par l&apos;action. Chaque leçon est suivie de quiz interactifs et de défis pratiques pour ancrer les connaissances.
@@ -43,7 +44,7 @@ export default function APropos(props: any) {
               </div>
 
               <div className="group p-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-2xl mb-6">🚀</div>
+                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-2xl mb-6"><Rocket className="w-6 h-6 text-indigo-500" /></div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Notre vision</h2>
                 <p className="mt-3 text-slate-600 dark:text-slate-400 leading-relaxed">
                   Devenir le compagnon de réussite incontournable pour les étudiants, en alliant technologie IA et pédagogie de pointe.

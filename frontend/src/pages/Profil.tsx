@@ -11,6 +11,7 @@ import BarreNavigation from "../composants/BarreNavigation";
 import BarreProgression from "../composants/BarreProgression";
 import CarteCours from "../composants/CarteCours";
 import PiedPage from "../composants/PiedPage";
+import { Flame } from "lucide-react";
 
 export default function Profil(props: any) {
   const { etudiant, onDeconnexion } = props;
@@ -95,8 +96,8 @@ export default function Profil(props: any) {
               <p>
                 <span className="font-semibold text-gray-900 dark:text-white">Points :</span> {etudiant.points ?? 0}
               </p>
-              <p>
-                <span className="font-semibold text-gray-900 dark:text-white">Streak :</span> 🔥 {etudiant.streak ?? 0} jours
+              <p className="flex items-center gap-1">
+                <span className="font-semibold text-gray-900 dark:text-white">Streak :</span> <Flame className="w-4 h-4 text-orange-500" /> {etudiant.streak ?? 0} jours
               </p>
             </div>
             <div className="pt-5">

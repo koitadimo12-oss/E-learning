@@ -103,7 +103,7 @@ export default function App(_props: any) {
             )
           }
         />
-        <Route path="/mini-jeu" element={etudiant ? <MiniJeu etudiant={etudiant} onDeconnexion={handleDeconnexion} /> : <Navigate to="/connexion" replace />} />
+        <Route path="/mini-jeu" element={etudiant ? <MiniJeu etudiant={etudiant} onDeconnexion={handleDeconnexion} setEtudiant={(e: Etudiant) => setEtudiant(e)} /> : <Navigate to="/connexion" replace />} />
         <Route path="/bibliotheque" element={<Bibliotheque etudiant={etudiant} onDeconnexion={handleDeconnexion} />} />
         <Route path="/favoris" element={<Favoris {...shell} />} />
         <Route path="/admin" element={<AdminConnexion />} />
@@ -117,11 +117,14 @@ export default function App(_props: any) {
   );
 }
 
-/** Chatbot global — uniquement pour les utilisateurs connectés (JWT) */
+/** Chatbot global — visible partout sauf admin et bibliothèque.
+ *  Si l'utilisateur n'est pas connecté, le chatbot affiche un message
+ *  invitant à se connecter au lieu de répondre via l'IA. */
 function GlobalChatbot() {
   const { pathname } = useLocation();
-  if (pathname === "/bibliotheque" || !getAuthToken()) return null;
-  return <Chatbot />;
+  // Masqué sur la bibliothèque (elle a son propre chatbot) et le dashboard admin
+  if (pathname === "/bibliotheque" || pathname.startsWith("/admin")) return null;
+  return <Chatbot isAuthenticated={!!getAuthToken()} />;
 }
 
 function ScrollToTop() {

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Trophy, Flame, Library, Gamepad2, Star, GraduationCap, Bot } from "lucide-react";
 
 import { getCoursCache, chargerCours } from "../services/coursApi";
 import type { Cours } from "../services/coursService";
@@ -153,7 +154,7 @@ export default function TableauBord(props: any) {
       <>
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Bonjour, {etudiant.nom} 👋</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-2">Bonjour, {etudiant.nom}</h1>
             <p className="text-gray-600 dark:text-slate-400 mt-2 max-w-xl">
               Voici votre tableau de bord : progression, recommandations et historique.
             </p>
@@ -164,11 +165,11 @@ export default function TableauBord(props: any) {
         <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5">
             <p className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-               🏆 Niveau {etudiant.niveau || 1}
+               <Trophy className="w-4 h-4" /> Niveau {etudiant.niveau || 1}
             </p>
             <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{etudiant.points || 0} XP</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-              {etudiant.streak > 0 ? `🔥 ${etudiant.streak} jours consécutifs` : "Commencez une série !"}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-1">
+              {etudiant.streak > 0 ? <><Flame className="w-4 h-4 text-orange-500" /> {etudiant.streak} jours consécutifs</> : "Commencez une série !"}
             </p>
           </div>
 
@@ -195,7 +196,7 @@ export default function TableauBord(props: any) {
             onClick={() => navigate("/bibliotheque")}
             className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 text-left hover:shadow-md transition"
           >
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">📚 Bibliothèque</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><Library className="w-4 h-4" /> Bibliothèque</p>
             <p className="text-lg font-bold text-slate-900 dark:text-white mt-2">Livres suggérés</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Contenu recommandé par l'IA</p>
           </button>
@@ -206,11 +207,11 @@ export default function TableauBord(props: any) {
           <div className="mt-10 bg-white dark:bg-slate-900 rounded-3xl border-2 border-orange-100 dark:border-orange-900/30 overflow-hidden shadow-xl shadow-orange-500/5">
             <div className="flex flex-col lg:flex-row">
               <div className="lg:w-1/3 bg-gradient-to-br from-orange-500 to-rose-500 p-8 flex flex-col items-center justify-center text-white text-center">
-                <span className="text-7xl mb-4 animate-bounce">{dailyGame.emoji || "🎮"}</span>
+                <span className="mb-4 text-white"><Gamepad2 className="w-16 h-16 animate-bounce" /></span>
                 <p className="text-sm font-black uppercase tracking-widest opacity-80">Challenge du jour</p>
                 <div className="mt-4 flex gap-1">
                    {[...Array(3)].map((_, i) => (
-                     <span key={i} className={i < dailyGame.difficulty ? "text-white" : "opacity-30"}>⭐</span>
+                     <span key={i} className={i < dailyGame.difficulty ? "text-white" : "opacity-30"}><Star className="w-5 h-5 fill-current" /></span>
                    ))}
                 </div>
               </div>
@@ -728,7 +729,7 @@ function RecommandationIA({ etudiant }: { etudiant: Etudiant }) {
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
     {
       role: 'ai',
-      text: `Bonjour ${etudiant.nom} ! 🎓 Je suis votre conseiller IA. Dites-moi un domaine qui vous intéresse (ex: développement web, cybersécurité, IA…) et je vous recommande un parcours personnalisé !`,
+      text: `Bonjour ${etudiant.nom} ! Je suis votre conseiller IA. Dites-moi un domaine qui vous intéresse (ex: développement web, cybersécurité, IA…) et je vous recommande un parcours personnalisé !`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -764,7 +765,7 @@ function RecommandationIA({ etudiant }: { etudiant: Etudiant }) {
     <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/50 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-900 shadow-sm overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-4 flex items-center gap-3">
-        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl">🤖</div>
+        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white"><Bot className="w-6 h-6" /></div>
         <div>
           <p className="font-bold text-white text-sm">Conseiller IA Parcours</p>
           <p className="text-indigo-200 text-xs">Recommandations personnalisées basées sur votre profil</p>

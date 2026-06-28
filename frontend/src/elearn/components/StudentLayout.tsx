@@ -2,15 +2,16 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getThemePref, setThemePref } from "../../services/stockageLocal";
 import { useState } from "react";
+import { Home, Target, Book, Brain, LineChart, Trophy, User } from "lucide-react";
 
-const items: { to: string; label: string; emoji: string }[] = [
-  { to: "/dashboard", label: "Dashboard", emoji: "🏠" },
-  { to: "/etudiant/parcours", label: "Parcours", emoji: "🎯" },
-  { to: "/mes-cours", label: "Mes cours", emoji: "📖" },
-  { to: "/mes-quiz", label: "Quiz", emoji: "🧠" },
-  { to: "/progression", label: "Progression", emoji: "📈" },
-  { to: "/certificats", label: "Certificats", emoji: "🏆" },
-  { to: "/etudiant/profil", label: "Profil", emoji: "👤" },
+const items = [
+  { to: "/dashboard", label: "Dashboard", icon: <Home className="w-4 h-4" /> },
+  { to: "/etudiant/parcours", label: "Parcours", icon: <Target className="w-4 h-4" /> },
+  { to: "/mes-cours", label: "Mes cours", icon: <Book className="w-4 h-4" /> },
+  { to: "/mes-quiz", label: "Quiz", icon: <Brain className="w-4 h-4" /> },
+  { to: "/progression", label: "Progression", icon: <LineChart className="w-4 h-4" /> },
+  { to: "/certificats", label: "Certificats", icon: <Trophy className="w-4 h-4" /> },
+  { to: "/etudiant/profil", label: "Profil", icon: <User className="w-4 h-4" /> },
 ];
 
 const navCls = ({ isActive }: { isActive: boolean }) =>
@@ -43,7 +44,7 @@ export function StudentLayout() {
         <nav className="flex flex-1 flex-col gap-1 p-3">
           {items.map((item) => (
             <NavLink key={item.to} to={item.to} className={navCls} end={item.to === "/dashboard"}>
-              <span aria-hidden>{item.emoji}</span>
+              {item.icon}
               {item.label}
             </NavLink>
           ))}

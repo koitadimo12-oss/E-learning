@@ -120,8 +120,26 @@ async function buildEtudiantFromSession(): Promise<Etudiant | null> {
   try {
     const user = await authApi.me();
     if (user.role === "admin") return null;
+
+    // --- Vérification et mise à jour automatique du Streak (24h) ---
+    const today = new Date().toDateString();
+    let updatedStreak = user.streak ?? 0;
+    let updatedLastStreak = user.lastStreakDate;
+
+    if (user.lastStreakDate !== today) {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      const hier = y.toDateString();
+      // Si la dernière connexion était hier, on augmente. Sinon, on remet à 1.
+      updatedStreak = user.lastStreakDate === hier ? (user.streak ?? 0) + 1 : 1;
+      updatedLastStreak = today;
+      // Mise à jour en arrière-plan
+      authApi.updateProfile({ streak: updatedStreak, lastStreakDate: updatedLastStreak }).catch(console.error);
+    }
+    // ---------------------------------------------------------------
+
     const progressions = await fetchProgressions();
-    return mapApiUserToEtudiant(user, progressions);
+    return mapApiUserToEtudiant({ ...user, streak: updatedStreak, lastStreakDate: updatedLastStreak }, progressions);
   } catch {
     authApi.logout();
     return null;
@@ -252,20 +270,7 @@ export async function validerProjetParcours(_idEtudiant: string): Promise<boolea
   return true;
 }
 
-export async function toucherStreak(_idEtudiant: string) {
-  if (!getAuthToken()) return;
-  const user = await authApi.me();
-  const today = new Date().toDateString();
-  const last = user.lastStreakDate;
-  if (last === today) return;
-
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  const hier = y.toDateString();
-  const streak = last === hier ? (user.streak ?? 0) + 1 : 1;
-  await authApi.updateProfile({ streak, lastStreakDate: today });
-}
-
+// (Ancienne fonction toucherStreak supprimée car désormais intégrée dans buildEtudiantFromSession)
 export function setSessionEtudiant(_etudiant: Etudiant | null) {
   // Session gérée par le token JWT — pas de données en localStorage
 }

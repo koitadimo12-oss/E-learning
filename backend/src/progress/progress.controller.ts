@@ -7,11 +7,10 @@ import { ProgressService } from './progress.service';
 import { SubmitQuizDto } from './dto/submit-quiz.dto';
 import { UpdateProgressDto } from './dto/update-progress.dto';
 
-/** Suivi de progression — toutes les routes nécessitent d'être connecté (JWT) */
 @ApiTags('Progression')
 @ApiBearerAuth()
 @Controller('progress')
-@UseGuards(JwtAuthGuard) // ← le frontend doit envoyer le token pour ces routes
+@UseGuards(JwtAuthGuard)
 export class ProgressController {
   constructor(private readonly progress: ProgressService) {}
 

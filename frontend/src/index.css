@@ -331,3 +331,127 @@ html {
   .knd-scroll-marquee,.knd-modal-enter,.knd-hero-slide,.knd-text-reveal,
   .knd-word-cycle span,.knd-route-in,.knd-ticker { animation: none !important; }
 }
+
+/* ═══════════════ GLOBAL INTERACTIONS ═══════════════ */
+/* 
+   Tout élément cliquable reçoit :
+   1. cursor: pointer  – signale visuellement l'interactivité
+   2. transition douce – scale, brightness, box-shadow, opacity
+   3. hover : léger lift + luminosité
+   4. active : enfoncement (scale down)
+   5. focus-visible : anneau visible pour navigation clavier
+*/
+@layer base {
+
+  /* ── Éléments nativement interactifs ── */
+  button,
+  [role="button"],
+  a,
+  select,
+  label[for],
+  summary,
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"]::file-selector-button,
+
+  /* ── Éléments rendus interactifs par attribut ── */
+  [onclick],
+  [tabindex]:not([tabindex="-1"]),
+  [data-clickable],
+  [role="tab"],
+  [role="link"],
+  [role="menuitem"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+
+  /* ── Classes utilitaires Tailwind courantes ── */
+  .cursor-pointer,
+
+  /* ── Cartes et conteneurs cliquables ── */
+  .group[class*="cursor-pointer"],
+  div[class*="cursor-pointer"],
+  article[class*="cursor-pointer"],
+  section[class*="cursor-pointer"],
+  li[class*="cursor-pointer"],
+  tr[class*="cursor-pointer"] {
+    cursor: pointer !important;
+    transition: transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 0.18s ease,
+                box-shadow 0.18s ease,
+                opacity 0.18s ease;
+  }
+
+  /* ── Hover : lift + brightness (éléments non-désactivés) ── */
+  button:not(:disabled):hover,
+  [role="button"]:not(:disabled):hover,
+  [role="tab"]:hover,
+  [role="link"]:hover,
+  [role="menuitem"]:hover,
+  [role="option"]:hover,
+  [role="switch"]:hover,
+  [onclick]:hover,
+  [data-clickable]:hover,
+  summary:hover,
+  label[for]:hover,
+  .cursor-pointer:hover,
+  div[class*="cursor-pointer"]:hover,
+  article[class*="cursor-pointer"]:hover,
+  li[class*="cursor-pointer"]:hover,
+  tr[class*="cursor-pointer"]:hover {
+    filter: brightness(1.08);
+  }
+
+  a:hover {
+    filter: brightness(1.1);
+  }
+
+  /* ── Active : press-down ── */
+  button:not(:disabled):active,
+  [role="button"]:not(:disabled):active,
+  [role="tab"]:active,
+  [role="link"]:active,
+  [role="menuitem"]:active,
+  [onclick]:active,
+  [data-clickable]:active,
+  summary:active,
+  label[for]:active,
+  a:active,
+  .cursor-pointer:active,
+  div[class*="cursor-pointer"]:active,
+  article[class*="cursor-pointer"]:active,
+  li[class*="cursor-pointer"]:active,
+  tr[class*="cursor-pointer"]:active {
+    transform: scale(0.97) !important;
+  }
+
+  /* ── Focus visible : anneau pour navigation clavier ── */
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible,
+  select:focus-visible,
+  summary:focus-visible,
+  [role="tab"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible,
+  input[type="submit"]:focus-visible,
+  input[type="button"]:focus-visible {
+    outline: 2px solid rgb(59 130 246 / 0.7);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ── Éléments désactivés : signaler visuellement ── */
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:disabled,
+  select:disabled,
+  a[aria-disabled="true"] {
+    cursor: not-allowed !important;
+    opacity: 0.55;
+    filter: grayscale(0.3);
+  }
+}

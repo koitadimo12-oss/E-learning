@@ -17,7 +17,6 @@ import { User } from './entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from './users.service';
 
-/** Routes utilisateurs : profil personnel + gestion admin */
 @ApiTags('Utilisateurs')
 @Controller('users')
 export class UsersController {

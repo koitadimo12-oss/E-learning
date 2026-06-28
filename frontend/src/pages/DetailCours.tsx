@@ -10,7 +10,6 @@ import {
   getEtudiant,
   mettreAJourChapitresCompletes,
   recompenserQuizReussi,
-  toucherStreak,
   validerProjetFinal,
 } from "../services/etudiantService";
 import { getParcoursCoursIds } from "../services/parcoursService";
@@ -24,6 +23,7 @@ import {
   setNotesCours,
   toggleFavoriCours,
 } from "../services/stockageLocal";
+import { ThumbsUp, Heart, Lightbulb, Rocket, MessageCircle, Lock } from "lucide-react";
 
 
 const SEUIL_PROGRESSION_CONTENU = 0.85;
@@ -89,7 +89,7 @@ export default function DetailCours(props: any) {
     setNotes(getNotesCours(cours.id));
     setFavori(estFavori(cours.id));
     if (etudiant) {
-      void toucherStreak(etudiant.id);
+
       void getEtudiant(etudiant.id).then((frais) => {
         if (frais && setEtudiant) setEtudiant(frais);
       });
@@ -378,9 +378,9 @@ export default function DetailCours(props: any) {
                         likerUneFois(etudiant.id, "cours", cours.id);
                         setLikeRev((x) => x + 1);
                       }}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold border bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-600 disabled:opacity-50"
+                      className="px-4 py-2 rounded-xl text-sm font-semibold border bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-600 disabled:opacity-50 flex items-center gap-1.5"
                     >
-                      👍 Leçon · {likesLecon}
+                      <ThumbsUp className="w-4 h-4" /> Leçon · {likesLecon}
                     </button>
                     <button
                       type="button"
@@ -389,9 +389,9 @@ export default function DetailCours(props: any) {
                         likerUneFois(etudiant.id, "formateur", cours.instructeur);
                         setLikeRev((x) => x + 1);
                       }}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold border bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-600 disabled:opacity-50"
+                      className="px-4 py-2 rounded-xl text-sm font-semibold border bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-600 disabled:opacity-50 flex items-center gap-1.5"
                     >
-                      ❤️ Prof · {likesFormateur}
+                      <Heart className="w-4 h-4 text-red-500 fill-current" /> Prof · {likesFormateur}
                     </button>
                   </>
                 )}
@@ -407,7 +407,7 @@ export default function DetailCours(props: any) {
                       : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-600"
                   }`}
                 >
-                  {favori ? "❤️ Favori" : "🤍 Favori"}
+                  {favori ? <span className="flex items-center gap-1.5"><Heart className="w-4 h-4 fill-current" /> Favori</span> : <span className="flex items-center gap-1.5"><Heart className="w-4 h-4" /> Favori</span>}
                 </button>
               </div>
             </div>
@@ -497,16 +497,16 @@ export default function DetailCours(props: any) {
                       onClick={handleSimplify}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition shadow-sm"
                     >
-                      <span>💡</span> Expliquer simplement
+                      <Lightbulb className="w-4 h-4 text-amber-300" /> Expliquer simplement
                     </button>
                     <button
                       onClick={handleExample}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 transition shadow-sm"
                     >
-                      <span>🚀</span> Donner un exemple
+                      <Rocket className="w-4 h-4 text-blue-500" /> Donner un exemple
                     </button>
-                    <p className="w-full text-center text-[11px] text-slate-400 mt-1">
-                      💬 Pour poser une question libre, utilisez le chatbot IA en bas à droite
+                    <p className="w-full text-center text-[11px] text-slate-400 mt-1 flex items-center justify-center gap-1">
+                      <MessageCircle className="w-3 h-3" /> Pour poser une question libre, utilisez le chatbot IA en bas à droite
                     </p>
                   </div>
                 )}
@@ -652,8 +652,8 @@ export default function DetailCours(props: any) {
           >
             {(!quizInteractif || visiteur) && (
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-slate-900/40 backdrop-blur-sm px-6 text-center">
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl max-w-sm">
-                   <p className="text-3xl mb-4">🔒</p>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl max-w-sm flex flex-col items-center">
+                   <Lock className="w-12 h-12 text-slate-400 mb-4" />
                    <p className="font-bold text-slate-900 dark:text-white">Quiz verrouillé</p>
                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
                      Vous devez terminer <strong>toutes les leçons</strong> ({cours.chapitres.length}) pour débloquer le quiz final et valider ce module.

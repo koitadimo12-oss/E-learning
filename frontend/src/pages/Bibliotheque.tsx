@@ -7,6 +7,7 @@ import Chatbot from '../composants/Chatbot';
 import { FiSearch, FiBookOpen, FiStar, FiFilter, FiLock } from 'react-icons/fi';
 import { listerLivres, type Livre } from '../services/livresApi';
 import { getAuthToken } from '../services/apiClient';
+import { Monitor, Lock, Bot, Globe, Settings, Database, Binary, Library, LockKeyhole, Mailbox } from "lucide-react";
 
 interface Book {
   id: string;
@@ -44,14 +45,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   'default':        'from-slate-600 to-slate-700',
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  'Développement':  '💻',
-  'Cybersécurité':  '🔐',
-  'IA & Data':      '🤖',
-  'Réseaux':        '🌐',
-  'Systèmes':       '⚙️',
-  'Base de données':'🗄️',
-  'Mathématiques':  '📐',
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  'Développement':  <Monitor className="w-4 h-4 inline" />,
+  'Cybersécurité':  <Lock className="w-4 h-4 inline" />,
+  'IA & Data':      <Bot className="w-4 h-4 inline" />,
+  'Réseaux':        <Globe className="w-4 h-4 inline" />,
+  'Systèmes':       <Settings className="w-4 h-4 inline" />,
+  'Base de données':<Database className="w-4 h-4 inline" />,
+  'Mathématiques':  <Binary className="w-4 h-4 inline" />,
 };
 
 export default function Bibliotheque({ etudiant, onDeconnexion }: any) {
@@ -134,7 +135,7 @@ export default function Bibliotheque({ etudiant, onDeconnexion }: any) {
           <div className="relative max-w-6xl mx-auto px-6 md:px-10 pt-28 pb-16">
             <div className="knd-slide-up flex flex-col items-center text-center gap-5">
               <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur text-xs font-bold uppercase tracking-widest">
-                📚 Bibliothèque numérique
+                <Library className="w-4 h-4" /> Bibliothèque numérique
               </span>
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-black leading-tight">
                 Lisez directement<br />
@@ -144,8 +145,8 @@ export default function Bibliotheque({ etudiant, onDeconnexion }: any) {
                 Parcourez notre collection. <strong>Connectez-vous</strong> pour lire les PDF et utiliser l&apos;assistant IA.
               </p>
               {!connecte && (
-                <p className="text-sm text-amber-200/90 bg-white/10 inline-block px-4 py-2 rounded-full">
-                  🔒 Lecture réservée aux membres inscrits
+                <p className="text-sm text-amber-200/90 bg-white/10 inline-flex items-center gap-2 px-4 py-2 rounded-full">
+                  <LockKeyhole className="w-4 h-4" /> Lecture réservée aux membres inscrits
                 </p>
               )}
               {erreur && (
@@ -212,8 +213,8 @@ export default function Bibliotheque({ etudiant, onDeconnexion }: any) {
 
           {/* ── Books Grid / List ── */}
           {filtered.length === 0 ? (
-            <div className="py-24 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800">
-              <p className="text-5xl mb-4">📭</p>
+            <div className="py-24 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col items-center">
+              <Mailbox className="w-12 h-12 text-slate-400 mb-4" />
               <p className="text-xl font-bold text-slate-700 dark:text-slate-200">Aucun livre trouvé</p>
               <p className="text-sm mt-2 mb-6">Essayez une autre catégorie ou un autre mot-clé.</p>
               <button
@@ -292,8 +293,8 @@ function CarteBook({ book, connecte, onLire }: { book: Book; connecte: boolean; 
           loading="lazy"
         />
         {/* Category badge */}
-        <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold text-white bg-gradient-to-r ${gradient}`}>
-          {CATEGORY_ICONS[book.category] ?? '📚'} {book.category}
+        <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold text-white bg-gradient-to-r ${gradient} flex items-center gap-1`}>
+          {CATEGORY_ICONS[book.category] ?? <Library className="w-3 h-3 inline" />} {book.category}
         </span>
         {/* Hover read overlay */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -339,7 +340,7 @@ function LigneBook({ book, connecte, onLire }: { book: Book; connecte: boolean; 
         />
       </div>
       <div className="flex flex-col flex-1 min-w-0 gap-1">
-        <span className={`self-start px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-gradient-to-r ${gradient}`}>
+        <span className={`self-start px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-gradient-to-r ${gradient} flex items-center gap-1`}>
           {CATEGORY_ICONS[book.category]} {book.category}
         </span>
         <h3 className="font-bold text-slate-900 dark:text-white text-base leading-snug">{book.title}</h3>

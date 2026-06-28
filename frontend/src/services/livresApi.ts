@@ -1,14 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- *  LIVRES — appels vers backend/src/books/books.controller.ts
- * ═══════════════════════════════════════════════════════════════
- *
- *  Frontend              →  livresApi             →  Backend
- *  Bibliotheque.tsx      →  listerLivres()        →  GET  /books
- *  DashboardAdmin        →  creerLivre()          →  POST /books (admin)
- *  DashboardAdmin        →  supprimerLivre()      →  DELETE /books/:id (admin)
- */
-
 import { apiDelete, apiGet, apiPatch, apiPost } from "./apiClient";
 
 export type Livre = {
