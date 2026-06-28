@@ -16,7 +16,6 @@ import { getStatsPlateforme, type StatsPlateforme } from "../services/statsApi";
 import { useCountUp } from "../hooks/useCountUp";
 import { useInViewOnce } from "../hooks/useInViewOnce";
 import { getDernierCoursId, getObjectifDuJour } from "../services/stockageLocal";
-import { validerProjetFinal } from "../services/etudiantService";
 import type { Etudiant } from "../services/etudiantService";
 
 type Props = { etudiant: Etudiant | null; onDeconnexion: () => void };

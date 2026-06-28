@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Flame, Library, Gamepad2, Star, GraduationCap, Bot, Menu, X } from "lucide-react";
+import { Trophy, Flame, Library, Gamepad2, Star, Bot, Menu, X } from "lucide-react";
 
 import { getCoursCache, chargerCours } from "../services/coursApi";
 import type { Cours } from "../services/coursService";

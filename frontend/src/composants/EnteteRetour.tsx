@@ -5,9 +5,8 @@ import { getThemePref, setThemePref } from "../services/stockageLocal";
 type Props = {
   to: string;
   label?: string;
-  titre?: string;
+  titre?: string | React.ReactNode;
   sousTitre?: string;
-  /** Affiche le basculement thème */
   themeToggle?: boolean;
 };
 
@@ -40,7 +39,7 @@ export default function EnteteRetour(props: Props) {
         </button>
         {(titre || sousTitre) && (
           <div className="min-w-0">
-            {titre && <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{titre}</h1>}
+            {titre && <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{titre}</h1>}
             {sousTitre && <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{sousTitre}</p>}
           </div>
         )}
