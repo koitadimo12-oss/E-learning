@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Flame, Library, Gamepad2, Star, GraduationCap, Bot } from "lucide-react";
+import { Trophy, Flame, Library, Gamepad2, Star, GraduationCap, Bot, Menu, X } from "lucide-react";
 
 import { getCoursCache, chargerCours } from "../services/coursApi";
 import type { Cours } from "../services/coursService";
@@ -65,6 +65,7 @@ export default function TableauBord(props: any) {
   const { etudiant, onDeconnexion, setEtudiant } = props;
   const navigate = useNavigate();
   const [sectionActive, setSectionActive] = useState<SectionTableauBord>("overview");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [coursSelectionne, setCoursSelectionne] = useState<Cours | null>(null);
   const [dailyGame, setDailyGame] = useState<DailyGameInfo | null>(null);
   const [listeCours, setListeCours] = useState<Cours[]>(() => getCoursCache());
@@ -651,8 +652,23 @@ export default function TableauBord(props: any) {
       <EnteteRetour to="/" label="Accueil" titre="Tableau de bord" sousTitre={etudiant.email} />
 
       <section className="max-w-7xl mx-auto px-6 md:px-10 py-12">
+        <div className="lg:hidden flex items-center justify-between mb-4 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
+          <span className="font-bold text-gray-900 dark:text-white">Menu du tableau de bord</span>
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            className="p-2 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition"
+          >
+             <Menu className="w-5 h-5"/>
+          </button>
+        </div>
+
         <div className="grid lg:grid-cols-[280px_1fr] gap-8 items-start">
-          <aside className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-xl p-5 sticky top-16">
+          <aside className={`bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-xl p-5 lg:sticky lg:top-16 transition-all ${isSidebarOpen ? "fixed inset-0 z-50 m-4 lg:m-0 lg:static lg:z-auto overflow-y-auto" : "hidden lg:block"}`}>
+            <div className="flex justify-end lg:hidden mb-2">
+              <button onClick={() => setIsSidebarOpen(false)} className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-500 hover:text-gray-900 dark:hover:text-white transition">
+                <X className="w-5 h-5"/>
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => setSectionActive("profil")}

@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
   BarChart, GraduationCap, BookOpen, Library, Shield, LogOut,
-  Trophy, AlertTriangle, Medal, Plus, Edit, Trash2, Search, Crown, Flame
+  Trophy, AlertTriangle, Medal, Plus, Edit, Trash2, Search, Crown, Flame,
+  Menu, X
 } from "lucide-react";
 import EnteteRetour from "../composants/EnteteRetour";
 import { deconnexionAdmin, estAdminConnecte } from "../services/adminService";
@@ -215,6 +216,7 @@ export default function DashboardAdmin() {
   if (!estAdminConnecte()) return <Navigate to="/admin" replace />;
 
   const [version, setVersion] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [etudiants, setEtudiants] = useState<Etudiant[]>([]);
   const [listeCours, setListeCours] = useState<Cours[]>(() => getCoursCache());
@@ -370,7 +372,7 @@ export default function DashboardAdmin() {
 
       <main className="max-w-[1400px] mx-auto px-4 md:px-6 py-8 grid lg:grid-cols-[280px,1fr] gap-6">
         {/* ═══ SIDEBAR ═══ */}
-        <aside className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200/60 dark:border-slate-700/60 p-5 h-fit lg:sticky lg:top-6 shadow-lg">
+        <aside className={`rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200/60 dark:border-slate-700/60 p-5 h-fit lg:sticky lg:top-6 shadow-lg transition-all ${isSidebarOpen ? "fixed inset-0 z-50 m-4 lg:m-0 lg:static lg:z-auto overflow-y-auto" : "hidden lg:block"}`}>
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white text-lg font-black shadow-lg shadow-indigo-500/30">
               K
@@ -379,6 +381,13 @@ export default function DashboardAdmin() {
               <p className="font-bold text-sm text-gray-900 dark:text-white">Admin KND</p>
               <p className="text-[11px] text-gray-500 dark:text-slate-400">Kaay Niou Diang</p>
             </div>
+            <button 
+              className="lg:hidden ml-auto p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition" 
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Fermer le menu"
+            >
+              <X className="w-6 h-6"/>
+            </button>
           </div>
           <nav className="space-y-1.5">
             {menuItems.map((item) => (
@@ -412,9 +421,18 @@ export default function DashboardAdmin() {
         <section className="space-y-6 min-w-0">
           {/* Top bar */}
           <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200/60 dark:border-slate-700/60 p-5 flex flex-wrap justify-between items-center gap-3 shadow-sm">
-            <div>
-              <p className="text-xl font-black text-gray-900 dark:text-white">{activeLabel}</p>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Données synchronisées avec l&apos;API NestJS + MySQL</p>
+            <div className="flex items-center gap-3">
+              <button 
+                type="button" 
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-2 -ml-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <div>
+                <p className="text-xl font-black text-gray-900 dark:text-white">{activeLabel}</p>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Données synchronisées avec l&apos;API NestJS + MySQL</p>
+              </div>
             </div>
             <button
               type="button"

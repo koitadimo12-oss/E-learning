@@ -232,7 +232,7 @@ export async function mettreAJourChapitresCompletes(
 
 async function attribuerPointsApi(xp: number, badges?: string[]) {
   const user = await authApi.me();
-  const nextXp = (user.xp ?? 0) + xp;
+  const nextXp = Math.max(0, (user.xp ?? 0) + xp);
   const nextNiveau = Math.max(1, Math.floor(nextXp / 100) + 1);
   const nextBadges = [...(user.badges ?? [])];
   if (badges) badges.forEach((b) => { if (!nextBadges.includes(b)) nextBadges.push(b); });
@@ -250,7 +250,7 @@ export async function recompenserQuizReussi(_idEtudiant: string, idCours: number
 }
 
 export async function ajouterXpMiniJeu(_idEtudiant: string, xp: number) {
-  if (!getAuthToken() || xp <= 0) return;
+  if (!getAuthToken()) return;
   await attribuerPointsApi(xp);
 }
 
