@@ -192,10 +192,11 @@ export default function MiniJeu(props: any) {
       if (quizAnswers[i] === questions[i].correctIndex) correct++;
     }
     const pct = Math.round((correct / questions.length) * 100);
-    const xpGagne = pct >= 60 ? game.reward.xp : 0;
+    // Réussite (>= 60%) → +XP, Échec → pénalité -XP
+    const xpGagne = pct >= 60 ? game.reward.xp : -game.reward.xp;
     
-    // ── APPEL BACKEND : ajout d'XP (si score suffisant) ──
-    if (xpGagne > 0 && etudiant) {
+    // ── APPEL BACKEND : ajout ou retrait d'XP ──
+    if (etudiant) {
       void ajouterXpMiniJeu(etudiant.id, xpGagne).then(() => {
         // Met à jour l'état global immédiatement pour que le Dashboard affiche les XP
         if (setEtudiant) {
@@ -363,9 +364,18 @@ export default function MiniJeu(props: any) {
                         disabled={!!result}
                         onClick={() => {
                           const isOk = c === game.payload?.correct;
-                          const xp = isOk ? game.reward.xp : 0;
-                          // ── APPEL BACKEND si bonne réponse : ajout XP ──
-                          if (xp > 0 && etudiant) void ajouterXpMiniJeu(etudiant.id, xp);
+                          // Réussite → +XP, Échec → pénalité -XP
+                          const xp = isOk ? game.reward.xp : -game.reward.xp;
+                          // ── APPEL BACKEND : ajout ou retrait d'XP ──
+                          if (etudiant) {
+                            void ajouterXpMiniJeu(etudiant.id, xp).then(() => {
+                              if (setEtudiant) {
+                                getSessionEtudiant().then((updated) => {
+                                  if (updated) setEtudiant(updated);
+                                });
+                              }
+                            });
+                          }
                           setResult({ ok: isOk, score: isOk ? 1 : 0, total: 1, xp });
                           // ── APPEL BACKEND : feedback IA ──
                           fetchAiAdvice(isOk ? 1 : 0, 1);
@@ -398,9 +408,10 @@ export default function MiniJeu(props: any) {
                         disabled={!!result}
                         onClick={() => {
                           const isOk = idx === game.payload?.correctIndex;
-                          const xp = isOk ? game.reward.xp : 0;
-                          // ── APPEL BACKEND si bonne réponse : ajout XP ──
-                          if (xp > 0 && etudiant) {
+                          // Réussite → +XP, Échec → pénalité -XP
+                          const xp = isOk ? game.reward.xp : -game.reward.xp;
+                          // ── APPEL BACKEND : ajout ou retrait d'XP ──
+                          if (etudiant) {
                             void ajouterXpMiniJeu(etudiant.id, xp).then(() => {
                               if (setEtudiant) {
                                 getSessionEtudiant().then((updated) => {
@@ -438,9 +449,9 @@ export default function MiniJeu(props: any) {
                   }`}
                 >
                   <div className="text-center">
-                    <div className="flex justify-center">{result.ok ? <Trophy className="w-16 h-16 text-emerald-500 mb-4" /> : <Frown className="w-16 h-16 text-amber-500 mb-4" />}</div>
+                    <div className="flex justify-center">{result.ok ? <Trophy className="w-16 h-16 text-emerald-500 mb-4" /> : <Frown className="w-16 h-16 text-red-500 mb-4" />}</div>
                     <h3 className="text-3xl font-black text-slate-900 dark:text-white">
-                      {result.ok ? "Magnifique !" : "Pas mal !"}
+                      {result.ok ? "Magnifique !" : "Dommage..."}
                     </h3>
                     <p className="mt-2 text-slate-600 dark:text-slate-400 font-medium">
                       Score final : <span className="font-bold text-xl">{result.score} / {result.total}</span>
@@ -449,6 +460,16 @@ export default function MiniJeu(props: any) {
                       <div className="mt-4 inline-block px-6 py-2 bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/30 animate-bounce">
                         +{result.xp} XP
                       </div>
+                    )}
+                    {result.xp < 0 && (
+                      <div className="mt-4 inline-block px-6 py-2 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-500/30 animate-pulse">
+                        {result.xp} XP
+                      </div>
+                    )}
+                    {result.xp < 0 && (
+                      <p className="mt-3 text-sm text-red-500 dark:text-red-400 font-medium">
+                        ⚠️ Pénalité ! Révisez et réessayez pour regagner vos points.
+                      </p>
                     )}
                   </div>
 

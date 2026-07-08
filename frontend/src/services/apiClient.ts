@@ -1,14 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- *  COUCHE HTTP — communication Frontend ↔ Backend (axios)
- * ═══════════════════════════════════════════════════════════════
- *
- * Tous les services (authApi, coursApi, livresApi…) passent par ici.
- * Le backend NestJS écoute sur VITE_API_URL (défaut : http://localhost:3001).
- *
- * Flux d'une requête :
- *   Page React → service (ex: coursApi) → apiGet/apiPost → axios → NestJS
- */
 
 import axios, { type AxiosError } from "axios";
 

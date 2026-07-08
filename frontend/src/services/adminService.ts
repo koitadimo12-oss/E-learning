@@ -1,12 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════
- *  ADMIN — connexion via la même API auth, avec vérif du rôle
- * ═══════════════════════════════════════════════════════════════
- *
- *  AdminConnexion.tsx  →  connexionAdmin()  →  POST /auth/login
- *  Si role !== "admin" → refusé côté frontend
- *  DashboardAdmin.tsx  →  accès si token présent
- */
 
 import { authApi } from "./authApi";
 import { getAuthToken } from "./apiClient";
