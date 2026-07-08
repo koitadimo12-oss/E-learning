@@ -12,6 +12,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:5173',
       'https://e-learning-dtux.vercel.app',
+      'https://e-learning-xi-blush.vercel.app',
       process.env.FRONTEND_URL,
     ].filter(Boolean),
     credentials: true,
