@@ -60,7 +60,7 @@ export default function BarreNavigation(props: Props) {
           <Link to="/" className="flex items-center gap-3 group">
             <div className="relative">
               <img
-                src="/logo2.png"
+                src="/logo2.webp"
                 alt="Logo Kaay Niou Diang"
                 className="w-12 h-12 sm:w-14 sm:h-14 object-contain transition-transform group-hover:scale-110"
                 onError={(e) => {

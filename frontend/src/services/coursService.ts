@@ -122,7 +122,7 @@ const coursBase: Cours[] = [
     titre: "React JS : Développez des applis modernes",
     description:
       "Créez des applications web dynamiques en utilisant React JS et les hooks.",
-    image: "/cours/react.png",
+    image: "/cours/react.webp",
     instructeur: "M. Cheikh Fall",
     categorie: "Developpement Web",
     badge: "Programmation",
@@ -165,7 +165,7 @@ const coursBase: Cours[] = [
     titre: "Mathématiques pour Lycéens",
     description:
       "Maîtrisez les concepts des maths du lycée : algèbre, géométrie, trigonométrie et prob...",
-    image: "/cours/math.png",
+    image: "/cours/math.webp",
     instructeur: "Mme Ndour",
     categorie: "Science",
     badge: "Sciences",
@@ -201,7 +201,7 @@ const coursBase: Cours[] = [
     titre: "JavaScript pour Débutants",
     description:
       "Apprenez JavaScript depuis zéro : variables, fonctions, boucles et manipulation du DOM.",
-    image: "/cours/python.png",
+    image: "/cours/python.webp",
     instructeur: "M. Cheikh Fall",
     categorie: "Programmation",
     badge: "Programmation",
@@ -240,7 +240,7 @@ const coursBase: Cours[] = [
     titre: "Sciences de la Communication",
     description:
       "Maîtrisez les bases pour communiquer clairement : structurer, convaincre et s'exprimer.",
-    image: "/cours/science.png",
+    image: "/cours/science.webp",
     instructeur: "Mme Ndour",
     categorie: "Soft Skills",
     badge: "Communication",

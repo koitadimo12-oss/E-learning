@@ -96,7 +96,7 @@ export default function Connexion(props: any) {
           <div className="w-full max-w-[420px]">
             <div className="mb-4 flex justify-center">
               <img
-                src="/logo2.png"
+                src="/logo2.webp"
                 alt="Logo"
                 className="h-16 object-contain"
                 onError={(e) => {
@@ -190,7 +190,7 @@ export default function Connexion(props: any) {
 
         <div className="hidden lg:flex w-1/2 bg-[#f5e6db] dark:bg-slate-800 items-center justify-center">
           <img
-            src="/Hero.png"
+            src="/Hero.webp"
             alt="illustration"
             className="w-full h-full object-contain"
             onError={(e: SyntheticEvent<HTMLImageElement>) => {

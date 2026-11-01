@@ -75,7 +75,7 @@ export default function Inscription(props: any) {
           <div className="w-full max-w-[380px]">
             <div className="flex justify-center mb-4">
               <img
-                src="/logo2.png"
+                src="/logo2.webp"
                 alt="logo"
                 className="h-14 drop-shadow-md"
                 onError={(e) => {
@@ -180,7 +180,7 @@ export default function Inscription(props: any) {
 
         <div className="hidden lg:flex w-1/2 bg-[#f5e6db] dark:bg-slate-800 items-center justify-center">
           <img
-            src="/Hero.png"
+            src="/Hero.webp"
             alt="illustration"
             className="w-full h-full object-contain"
             onError={(e) => {
