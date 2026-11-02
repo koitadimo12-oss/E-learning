@@ -1,3 +1,4 @@
+
 import {
   Body,
   Controller,
@@ -29,6 +30,13 @@ export class CoursesController {
   @Get()
   findAll(): Promise<Course[]> {
     return this.coursesService.findAll();
+  }
+
+  // Vérifier les chemins des images enregistrés dans Aiven
+  @ApiOperation({ summary: 'Vérifier les images des cours' })
+  @Get('verifier-images')
+  verifierImages() {
+    return this.coursesService.verifierImages();
   }
 
   /** Détail d'un cours — accessible sans connexion */
@@ -71,3 +79,4 @@ export class CoursesController {
     return this.coursesService.remove(id);
   }
 }
+
