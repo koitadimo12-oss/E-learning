@@ -44,8 +44,9 @@ import { envRequired, envRequiredNumber } from './config/env.config';
           username: envRequired(configService, 'DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD') ?? '',
           database: envRequired(configService, 'DB_DATABASE'),
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: true,
+                   entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: false,
+          ssl: { rejectUnauthorized: false },
         };
       },
       inject: [ConfigService],
